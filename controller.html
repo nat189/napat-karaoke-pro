@@ -1,1844 +1,1985 @@
 <!DOCTYPE html>
+
 <html lang="th">
 <head>
     <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width,
-                 initial-scale=1.0,
-                 maximum-scale=1.0,
-                 user-scalable=no"
-    >
+```
+<meta
+    name="viewport"
+    content="width=device-width,
+             initial-scale=1.0,
+             maximum-scale=1.0,
+             user-scalable=no"
+>
 
-    <meta name="theme-color" content="#08080a">
+<meta name="theme-color" content="#08080a">
 
-    <title>Napat Karaoke Pro - Controller</title>
+<title>Napat Karaoke Pro - Controller</title>
 
-    <!-- PeerJS -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
-    <style>
+<style>
+    :root {
+        --red: #ff2d55;
+        --pink: #ff375f;
+        --green: #32d74b;
+        --blue: #0a84ff;
+        --orange: #ff9f0a;
+        --purple: #bf5af2;
 
-        :root {
-            --red: #ff2d55;
-            --pink: #ff375f;
-            --green: #32d74b;
-            --blue: #0a84ff;
-            --orange: #ff9f0a;
-            --purple: #bf5af2;
+        --dark: #070709;
+        --card: #151518;
+        --card2: #1c1c20;
 
-            --dark: #070709;
-            --card: #151518;
-            --card2: #1c1c20;
+        --border: rgba(255,255,255,.09);
+        --muted: #8e8e93;
+    }
 
-            --border: rgba(255,255,255,.09);
-            --muted: #8e8e93;
-        }
+    * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+    }
 
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        background: var(--dark);
+        color: white;
 
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-            min-height: 100%;
-            background: var(--dark);
-            color: white;
+        font-family:
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            Roboto,
+            Arial,
+            sans-serif;
+    }
 
-            font-family:
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                Roboto,
-                Arial,
-                sans-serif;
-        }
+    body {
+        padding-bottom: 35px;
+    }
 
-        body {
-            padding-bottom: 35px;
-        }
+    button,
+    input {
+        font: inherit;
+    }
 
-        button,
-        input {
-            font: inherit;
-        }
+    button {
+        cursor: pointer;
+    }
 
-        button {
-            cursor: pointer;
-        }
+    .app {
+        width: min(620px, 100%);
+        margin: auto;
+        padding: 14px;
+    }
 
-        /* =====================================================
-           APP
-        ===================================================== */
+    /* HEADER */
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        padding: 14px 4px 18px;
+    }
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+    }
+
+    .brand-icon {
+        width: 44px;
+        height: 44px;
+
+        display: grid;
+        place-items: center;
+
+        border-radius: 14px;
+
+        background:
+            linear-gradient(
+                135deg,
+                var(--red),
+                #ff7048
+            );
+
+        font-size: 22px;
+
+        box-shadow:
+            0 8px 25px
+            rgba(255,45,85,.28);
+    }
+
+    .brand-title {
+        font-size: 17px;
+        font-weight: 900;
+    }
+
+    .brand-sub {
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 11px;
+    }
+
+    /* CONNECTION */
+
+    .connection {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+
+        padding: 8px 11px;
+
+        border-radius: 20px;
+
+        background: rgba(255,255,255,.05);
+
+        border: 1px solid var(--border);
+
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .connection-dot {
+        width: 8px;
+        height: 8px;
+
+        border-radius: 50%;
+
+        background: var(--orange);
+    }
+
+    .connection.online {
+        color: var(--green);
+    }
+
+    .connection.online .connection-dot {
+        background: var(--green);
+
+        box-shadow:
+            0 0 10px
+            rgba(50,215,75,.8);
+    }
+
+    /* ROOM */
+
+    .room-card {
+        padding: 14px 16px;
+
+        margin-bottom: 12px;
+
+        border-radius: 18px;
+
+        background:
+            linear-gradient(
+                135deg,
+                rgba(255,45,85,.10),
+                rgba(191,90,242,.07)
+            );
+
+        border: 1px solid var(--border);
+    }
+
+    .room-label {
+        color: var(--muted);
+
+        font-size: 10px;
+        font-weight: 700;
+
+        letter-spacing: 1px;
+    }
+
+    .room-code {
+        margin-top: 3px;
+
+        font-size: 19px;
+        font-weight: 900;
+
+        letter-spacing: 1px;
+
+        word-break: break-all;
+    }
+
+    .room-hint {
+        margin-top: 3px;
+
+        color: #777;
+
+        font-size: 11px;
+    }
+
+    /* CONTROLS */
+
+    .main-controls {
+        display: grid;
+
+        grid-template-columns:
+            1fr 1fr;
+
+        gap: 9px;
+
+        margin-bottom: 14px;
+    }
+
+    .control-btn {
+        border: 0;
+
+        border-radius: 16px;
+
+        min-height: 54px;
+
+        color: white;
+
+        font-weight: 900;
+
+        font-size: 14px;
+
+        transition:
+            transform .12s ease,
+            opacity .12s ease;
+    }
+
+    .control-btn:active {
+        transform: scale(.97);
+        opacity: .82;
+    }
+
+    .btn-skip {
+        background:
+            linear-gradient(
+                135deg,
+                var(--red),
+                #ff7048
+            );
+
+        box-shadow:
+            0 8px 25px
+            rgba(255,45,85,.2);
+    }
+
+    .btn-pause {
+        background:
+            linear-gradient(
+                135deg,
+                #5856d6,
+                #8b5cf6
+            );
+    }
+
+    /* SEARCH */
+
+    .section-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        margin: 18px 3px 9px;
+
+        font-size: 14px;
+        font-weight: 900;
+    }
+
+    .section-count {
+        color: var(--green);
+        font-size: 11px;
+    }
+
+    .search-box {
+        display: flex;
+        gap: 8px;
+    }
+
+    #search-input {
+        min-width: 0;
+        flex: 1;
+
+        padding: 14px 15px;
+
+        border-radius: 14px;
+
+        border: 1px solid #29292e;
+
+        outline: none;
+
+        background: #141416;
+
+        color: white;
+
+        font-size: 14px;
+    }
+
+    #search-input::placeholder {
+        color: #666;
+    }
+
+    #search-input:focus {
+        border-color:
+            rgba(10,132,255,.7);
+
+        box-shadow:
+            0 0 0 3px
+            rgba(10,132,255,.08);
+    }
+
+    .btn-search {
+        width: 78px;
+
+        border: 0;
+
+        border-radius: 14px;
+
+        background: var(--blue);
+
+        color: white;
+
+        font-size: 13px;
+        font-weight: 900;
+    }
+
+    /* RESULTS */
+
+    #results {
+        margin-top: 10px;
+    }
+
+    .result-item {
+        display: flex;
+
+        align-items: center;
+
+        gap: 10px;
+
+        padding: 10px;
+
+        margin-bottom: 8px;
+
+        border-radius: 16px;
+
+        background: var(--card);
+
+        border: 1px solid var(--border);
+    }
+
+    .result-thumb {
+        width: 78px;
+        height: 52px;
+
+        flex-shrink: 0;
+
+        object-fit: cover;
+
+        border-radius: 9px;
+
+        background: #000;
+    }
+
+    .result-info {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .result-title {
+        overflow: hidden;
+
+        display: -webkit-box;
+
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+
+        font-size: 12px;
+        font-weight: 700;
+
+        line-height: 1.35;
+    }
+
+    .result-meta {
+        margin-top: 4px;
+
+        overflow: hidden;
+
+        white-space: nowrap;
+
+        text-overflow: ellipsis;
+
+        color: #777;
+
+        font-size: 10px;
+    }
+
+    .btn-add {
+        flex-shrink: 0;
+
+        border: 0;
+
+        padding: 9px 12px;
+
+        border-radius: 11px;
+
+        background: var(--red);
+
+        color: white;
+
+        font-size: 11px;
+
+        font-weight: 900;
+    }
+
+    .btn-add:active {
+        transform: scale(.94);
+    }
+
+    .loading {
+        padding: 25px 10px;
+
+        text-align: center;
+
+        color: #777;
+
+        font-size: 13px;
+    }
+
+    .error {
+        padding: 20px;
+
+        text-align: center;
+
+        color: var(--red);
+
+        font-size: 13px;
+    }
+
+    /* QUEUE */
+
+    .queue-card {
+        overflow: hidden;
+
+        border-radius: 18px;
+
+        background: var(--card);
+
+        border: 1px solid var(--border);
+    }
+
+    #queue-list {
+        padding: 7px;
+    }
+
+    .queue-empty {
+        padding: 28px 10px;
+
+        text-align: center;
+
+        color: #666;
+
+        font-size: 13px;
+    }
+
+    .queue-item {
+        position: relative;
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 10px;
+
+        padding: 11px;
+
+        margin-bottom: 6px;
+
+        border-radius: 14px;
+
+        background:
+            rgba(255,255,255,.035);
+
+        border: 1px solid
+            rgba(255,255,255,.05);
+
+        user-select: none;
+    }
+
+    .queue-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .queue-item.playing {
+        background:
+            rgba(50,215,75,.09);
+
+        border-color:
+            rgba(50,215,75,.28);
+    }
+
+    .queue-number {
+        width: 32px;
+        height: 32px;
+
+        flex-shrink: 0;
+
+        display: grid;
+        place-items: center;
+
+        border-radius: 10px;
+
+        background: #29292d;
+
+        color: #aaa;
+
+        font-size: 11px;
+        font-weight: 900;
+    }
+
+    .playing .queue-number {
+        background: var(--green);
+        color: #000;
+    }
+
+    .queue-info {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .queue-status {
+        margin-bottom: 3px;
+
+        color: var(--green);
+
+        font-size: 9px;
+        font-weight: 900;
+    }
+
+    .queue-title {
+        overflow: hidden;
+
+        white-space: nowrap;
+
+        text-overflow: ellipsis;
+
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .queue-channel {
+        margin-top: 3px;
+
+        overflow: hidden;
+
+        white-space: nowrap;
+
+        text-overflow: ellipsis;
+
+        color: #666;
+
+        font-size: 9px;
+    }
+
+    .queue-actions {
+        display: flex;
+
+        align-items: center;
+
+        gap: 5px;
+    }
+
+    .queue-btn {
+        width: 35px;
+        height: 35px;
+
+        display: grid;
+        place-items: center;
+
+        padding: 0;
+
+        border: 0;
+
+        border-radius: 9px;
+
+        background: #29292d;
+
+        color: white;
+
+        font-size: 13px;
+        font-weight: 900;
+    }
+
+    .queue-btn:active {
+        transform: scale(.92);
+    }
+
+    .queue-btn.orange {
+        color: var(--orange);
+    }
+
+    .queue-btn.red {
+        color: var(--red);
+    }
+
+    .queue-btn.retry {
+        width: auto;
+
+        padding: 0 9px;
+
+        color: #000;
+
+        background: white;
+
+        font-size: 10px;
+    }
+
+    /* TOAST */
+
+    #toast {
+        position: fixed;
+
+        left: 50%;
+
+        bottom: 22px;
+
+        z-index: 999;
+
+        transform:
+            translate(-50%, 20px);
+
+        opacity: 0;
+
+        pointer-events: none;
+
+        padding: 11px 16px;
+
+        border-radius: 30px;
+
+        background:
+            rgba(25,25,28,.94);
+
+        border:
+            1px solid
+            rgba(255,255,255,.12);
+
+        box-shadow:
+            0 10px 35px
+            rgba(0,0,0,.45);
+
+        color: white;
+
+        font-size: 12px;
+        font-weight: 700;
+
+        transition:
+            opacity .25s ease,
+            transform .25s ease;
+
+        white-space: nowrap;
+    }
+
+    #toast.show {
+        opacity: 1;
+
+        transform:
+            translate(-50%, 0);
+    }
+
+    @media (max-width: 420px) {
 
         .app {
-            width: min(620px, 100%);
-            margin: auto;
-            padding: 14px;
-        }
-
-        /* =====================================================
-           HEADER
-        ===================================================== */
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-
-            padding: 14px 4px 18px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 11px;
-        }
-
-        .brand-icon {
-            width: 44px;
-            height: 44px;
-
-            display: grid;
-            place-items: center;
-
-            border-radius: 14px;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    var(--red),
-                    #ff7048
-                );
-
-            font-size: 22px;
-
-            box-shadow:
-                0 8px 25px
-                rgba(255,45,85,.28);
+            padding: 11px;
         }
 
         .brand-title {
-            font-size: 17px;
-            font-weight: 900;
-        }
-
-        .brand-sub {
-            margin-top: 2px;
-
-            color: var(--muted);
-
-            font-size: 11px;
-        }
-
-        /* =====================================================
-           CONNECTION
-        ===================================================== */
-
-        .connection {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-
-            padding: 8px 11px;
-
-            border-radius: 20px;
-
-            background: rgba(255,255,255,.05);
-
-            border: 1px solid var(--border);
-
-            font-size: 11px;
-            font-weight: 700;
-        }
-
-        .connection-dot {
-            width: 8px;
-            height: 8px;
-
-            border-radius: 50%;
-
-            background: var(--orange);
-        }
-
-        .connection.online {
-            color: var(--green);
-        }
-
-        .connection.online
-        .connection-dot {
-            background: var(--green);
-
-            box-shadow:
-                0 0 10px
-                rgba(50,215,75,.8);
-        }
-
-        /* =====================================================
-           ROOM
-        ===================================================== */
-
-        .room-card {
-            padding: 14px 16px;
-
-            margin-bottom: 12px;
-
-            border-radius: 18px;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    rgba(255,45,85,.10),
-                    rgba(191,90,242,.07)
-                );
-
-            border: 1px solid var(--border);
-        }
-
-        .room-label {
-            color: var(--muted);
-
-            font-size: 10px;
-            font-weight: 700;
-
-            letter-spacing: 1px;
-        }
-
-        .room-code {
-            margin-top: 3px;
-
-            font-size: 19px;
-            font-weight: 900;
-
-            letter-spacing: 1px;
-        }
-
-        .room-hint {
-            margin-top: 3px;
-
-            color: #777;
-
-            font-size: 11px;
-        }
-
-        /* =====================================================
-           MAIN CONTROLS
-        ===================================================== */
-
-        .main-controls {
-            display: grid;
-
-            grid-template-columns:
-                1fr 1fr;
-
-            gap: 9px;
-
-            margin-bottom: 14px;
-        }
-
-        .control-btn {
-            border: 0;
-
-            border-radius: 16px;
-
-            min-height: 54px;
-
-            color: white;
-
-            font-weight: 900;
-
-            font-size: 14px;
-
-            transition:
-                transform .12s ease,
-                opacity .12s ease;
-        }
-
-        .control-btn:active {
-            transform: scale(.97);
-            opacity: .82;
-        }
-
-        .btn-skip {
-            background:
-                linear-gradient(
-                    135deg,
-                    var(--red),
-                    #ff7048
-                );
-
-            box-shadow:
-                0 8px 25px
-                rgba(255,45,85,.2);
-        }
-
-        .btn-pause {
-            background:
-                linear-gradient(
-                    135deg,
-                    #5856d6,
-                    #8b5cf6
-                );
-        }
-
-        /* =====================================================
-           SEARCH
-        ===================================================== */
-
-        .section-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-
-            margin: 18px 3px 9px;
-
-            font-size: 14px;
-            font-weight: 900;
-        }
-
-        .section-count {
-            color: var(--green);
-
-            font-size: 11px;
-        }
-
-        .search-box {
-            display: flex;
-            gap: 8px;
-        }
-
-        #search-input {
-            min-width: 0;
-            flex: 1;
-
-            padding: 14px 15px;
-
-            border-radius: 14px;
-
-            border: 1px solid #29292e;
-
-            outline: none;
-
-            background: #141416;
-
-            color: white;
-
-            font-size: 14px;
-        }
-
-        #search-input::placeholder {
-            color: #666;
-        }
-
-        #search-input:focus {
-            border-color:
-                rgba(10,132,255,.7);
-
-            box-shadow:
-                0 0 0 3px
-                rgba(10,132,255,.08);
-        }
-
-        .btn-search {
-            width: 78px;
-
-            border: 0;
-
-            border-radius: 14px;
-
-            background: var(--blue);
-
-            color: white;
-
-            font-size: 13px;
-            font-weight: 900;
-        }
-
-        /* =====================================================
-           SEARCH RESULTS
-        ===================================================== */
-
-        #results {
-            margin-top: 10px;
-        }
-
-        .result-item {
-            display: flex;
-
-            align-items: center;
-
-            gap: 10px;
-
-            padding: 10px;
-
-            margin-bottom: 8px;
-
-            border-radius: 16px;
-
-            background: var(--card);
-
-            border: 1px solid var(--border);
+            font-size: 15px;
         }
 
         .result-thumb {
-            width: 78px;
-            height: 52px;
-
-            flex-shrink: 0;
-
-            object-fit: cover;
-
-            border-radius: 9px;
-
-            background: #000;
-        }
-
-        .result-info {
-            min-width: 0;
-            flex: 1;
-        }
-
-        .result-title {
-            overflow: hidden;
-
-            display: -webkit-box;
-
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-
-            font-size: 12px;
-            font-weight: 700;
-
-            line-height: 1.35;
-        }
-
-        .result-meta {
-            margin-top: 4px;
-
-            overflow: hidden;
-
-            white-space: nowrap;
-
-            text-overflow: ellipsis;
-
-            color: #777;
-
-            font-size: 10px;
+            width: 70px;
+            height: 48px;
         }
 
         .btn-add {
-            flex-shrink: 0;
-
-            border: 0;
-
-            padding: 9px 12px;
-
-            border-radius: 11px;
-
-            background: var(--red);
-
-            color: white;
-
-            font-size: 11px;
-
-            font-weight: 900;
-        }
-
-        .btn-add:active {
-            transform: scale(.94);
-        }
-
-        .loading {
-            padding: 25px 10px;
-
-            text-align: center;
-
-            color: #777;
-
-            font-size: 13px;
-        }
-
-        .error {
-            padding: 20px;
-
-            text-align: center;
-
-            color: var(--red);
-
-            font-size: 13px;
-        }
-
-        /* =====================================================
-           QUEUE
-        ===================================================== */
-
-        .queue-card {
-            overflow: hidden;
-
-            border-radius: 18px;
-
-            background: var(--card);
-
-            border: 1px solid var(--border);
-        }
-
-        #queue-list {
-            padding: 7px;
-        }
-
-        .queue-empty {
-            padding: 28px 10px;
-
-            text-align: center;
-
-            color: #666;
-
-            font-size: 13px;
-        }
-
-        .queue-item {
-            position: relative;
-
-            display: flex;
-
-            align-items: center;
-
-            gap: 10px;
-
-            padding: 11px;
-
-            margin-bottom: 6px;
-
-            border-radius: 14px;
-
-            background:
-                rgba(255,255,255,.035);
-
-            border: 1px solid
-                rgba(255,255,255,.05);
-
-            user-select: none;
-        }
-
-        .queue-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .queue-item.playing {
-            background:
-                rgba(50,215,75,.09);
-
-            border-color:
-                rgba(50,215,75,.28);
-        }
-
-        .queue-number {
-            width: 32px;
-            height: 32px;
-
-            flex-shrink: 0;
-
-            display: grid;
-            place-items: center;
-
-            border-radius: 10px;
-
-            background: #29292d;
-
-            color: #aaa;
-
-            font-size: 11px;
-            font-weight: 900;
-        }
-
-        .playing .queue-number {
-            background: var(--green);
-            color: #000;
-        }
-
-        .queue-info {
-            min-width: 0;
-            flex: 1;
-        }
-
-        .queue-status {
-            margin-bottom: 3px;
-
-            color: var(--green);
-
-            font-size: 9px;
-            font-weight: 900;
-        }
-
-        .queue-title {
-            overflow: hidden;
-
-            white-space: nowrap;
-
-            text-overflow: ellipsis;
-
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .queue-channel {
-            margin-top: 3px;
-
-            overflow: hidden;
-
-            white-space: nowrap;
-
-            text-overflow: ellipsis;
-
-            color: #666;
-
-            font-size: 9px;
-        }
-
-        .queue-actions {
-            display: flex;
-
-            align-items: center;
-
-            gap: 5px;
+            padding: 8px 10px;
         }
 
         .queue-btn {
-            width: 35px;
-            height: 35px;
-
-            display: grid;
-            place-items: center;
-
-            padding: 0;
-
-            border: 0;
-
-            border-radius: 9px;
-
-            background: #29292d;
-
-            color: white;
-
-            font-size: 13px;
-            font-weight: 900;
+            width: 32px;
+            height: 32px;
         }
+    }
+</style>
+```
 
-        .queue-btn:active {
-            transform: scale(.92);
-        }
-
-        .queue-btn.orange {
-            color: var(--orange);
-        }
-
-        .queue-btn.red {
-            color: var(--red);
-        }
-
-        .queue-btn.retry {
-            width: auto;
-
-            padding: 0 9px;
-
-            color: #000;
-
-            background: white;
-
-            font-size: 10px;
-        }
-
-        /* =====================================================
-           TOAST
-        ===================================================== */
-
-        #toast {
-            position: fixed;
-
-            left: 50%;
-
-            bottom: 22px;
-
-            z-index: 999;
-
-            transform:
-                translate(-50%, 20px);
-
-            opacity: 0;
-
-            pointer-events: none;
-
-            padding: 11px 16px;
-
-            border-radius: 30px;
-
-            background:
-                rgba(25,25,28,.94);
-
-            border:
-                1px solid
-                rgba(255,255,255,.12);
-
-            box-shadow:
-                0 10px 35px
-                rgba(0,0,0,.45);
-
-            color: white;
-
-            font-size: 12px;
-            font-weight: 700;
-
-            transition:
-                opacity .25s ease,
-                transform .25s ease;
-
-            white-space: nowrap;
-        }
-
-        #toast.show {
-            opacity: 1;
-
-            transform:
-                translate(-50%, 0);
-        }
-
-        /* =====================================================
-           RESPONSIVE
-        ===================================================== */
-
-        @media (max-width: 420px) {
-
-            .app {
-                padding: 11px;
-            }
-
-            .brand-title {
-                font-size: 15px;
-            }
-
-            .result-thumb {
-                width: 70px;
-                height: 48px;
-            }
-
-            .btn-add {
-                padding: 8px 10px;
-            }
-
-            .queue-btn {
-                width: 32px;
-                height: 32px;
-            }
-
-        }
-
-    </style>
 </head>
 
 <body>
 
 <div class="app">
 
-    <!-- HEADER -->
-    <header class="header">
+```
+<!-- HEADER -->
 
-        <div class="brand">
+<header class="header">
 
-            <div class="brand-icon">
-                🎤
+    <div class="brand">
+
+        <div class="brand-icon">
+            🎤
+        </div>
+
+        <div>
+
+            <div class="brand-title">
+                Napat Karaoke Pro
             </div>
 
-            <div>
-
-                <div class="brand-title">
-                    Napat Karaoke Pro
-                </div>
-
-                <div class="brand-sub">
-                    Mobile Controller
-                </div>
-
+            <div class="brand-sub">
+                Mobile Controller
             </div>
 
-        </div>
-
-        <div
-            id="connection"
-            class="connection"
-        >
-
-            <span
-                class="connection-dot"
-            ></span>
-
-            <span id="connection-text">
-                กำลังเชื่อมต่อ
-            </span>
-
-        </div>
-
-    </header>
-
-
-    <!-- ROOM -->
-    <div class="room-card">
-
-        <div class="room-label">
-            KARAOKE ROOM
-        </div>
-
-        <div
-            id="room-code"
-            class="room-code"
-        >
-            ----
-        </div>
-
-        <div class="room-hint">
-            เชื่อมต่อกับ TV เพื่อควบคุมคิวเพลง
         </div>
 
     </div>
 
-
-    <!-- CONTROLS -->
-    <div class="main-controls">
-
-        <button
-            class="control-btn btn-skip"
-            onclick="sendAction('SKIP')"
-        >
-            ⏭️ ข้ามเพลง
-        </button>
-
-        <button
-            id="pause-btn"
-            class="control-btn btn-pause"
-            onclick="togglePlay()"
-        >
-            ⏸️ หยุดชั่วคราว
-        </button>
-
-    </div>
-
-
-    <!-- SEARCH -->
-    <div class="section-title">
-
-        <span>
-            🔎 ค้นหาเพลง
-        </span>
+    <div
+        id="connection"
+        class="connection"
+    >
 
         <span
-            id="result-count"
-            class="section-count"
+            class="connection-dot"
         ></span>
 
-    </div>
-
-    <div class="search-box">
-
-        <input
-            id="search-input"
-            type="text"
-            autocomplete="off"
-            placeholder="พิมพ์ชื่อเพลง / ศิลปิน..."
-        >
-
-        <button
-            class="btn-search"
-            onclick="searchMusic()"
-        >
-            ค้นหา
-        </button>
-
-    </div>
-
-    <div id="results"></div>
-
-
-    <!-- QUEUE -->
-    <div class="section-title">
-
-        <span>
-            🎶 คิวเพลง
-        </span>
-
-        <span
-            id="queue-count"
-            class="section-count"
-        >
-            0 เพลง
+        <span id="connection-text">
+            กำลังเชื่อมต่อ
         </span>
 
     </div>
 
-    <div class="queue-card">
+</header>
 
-        <div id="queue-list">
 
-            <div class="queue-empty">
-                ยังไม่มีเพลงในคิว
-            </div>
+<!-- ROOM -->
 
-        </div>
+<div class="room-card">
 
+    <div class="room-label">
+        KARAOKE ROOM
+    </div>
+
+    <div
+        id="room-code"
+        class="room-code"
+    >
+        ----
+    </div>
+
+    <div class="room-hint">
+        เชื่อมต่อกับ TV เพื่อควบคุมคิวเพลง
     </div>
 
 </div>
 
 
-<div id="toast"></div>
+<!-- CONTROLS -->
 
+<div class="main-controls">
+
+    <button
+        class="control-btn btn-skip"
+        onclick="sendAction('SKIP')"
+    >
+        ⏭️ ข้ามเพลง
+    </button>
+
+    <button
+        id="pause-btn"
+        class="control-btn btn-pause"
+        onclick="togglePlay()"
+    >
+        ⏸️ หยุดชั่วคราว
+    </button>
+
+</div>
+
+
+<!-- SEARCH -->
+
+<div class="section-title">
+
+    <span>
+        🔎 ค้นหาเพลง
+    </span>
+
+    <span
+        id="result-count"
+        class="section-count"
+    ></span>
+
+</div>
+
+<div class="search-box">
+
+    <input
+        id="search-input"
+        type="text"
+        autocomplete="off"
+        placeholder="พิมพ์ชื่อเพลง / ศิลปิน..."
+    >
+
+    <button
+        class="btn-search"
+        onclick="searchMusic()"
+    >
+        ค้นหา
+    </button>
+
+</div>
+
+<div id="results"></div>
+
+
+<!-- QUEUE -->
+
+<div class="section-title">
+
+    <span>
+        🎶 คิวเพลง
+    </span>
+
+    <span
+        id="queue-count"
+        class="section-count"
+    >
+        0 เพลง
+    </span>
+
+</div>
+
+<div class="queue-card">
+
+    <div id="queue-list">
+
+        <div class="queue-empty">
+            ยังไม่มีเพลงในคิว
+        </div>
+
+    </div>
+
+</div>
+```
+
+</div>
+
+<div id="toast"></div>
 
 <script>
 
-    /* =========================================================
-       STATE
-    ========================================================= */
+/* =========================================================
+   STATE
+========================================================= */
 
-    let peer = null;
+let peer = null;
+let conn = null;
 
-    let conn = null;
+let roomId = "";
 
-    let roomId = "";
+let currentQueue = [];
 
-    let currentQueue = [];
+let isPaused = false;
 
-    let isPaused = false;
-
-    let reconnectTimer = null;
-
-    let toastTimer = null;
+let reconnectTimer = null;
+let toastTimer = null;
 
 
-    /* =========================================================
-       ROOM
-    ========================================================= */
+/* =========================================================
+   ROOM
+========================================================= */
 
-    function getRoom() {
+function getRoom() {
 
-        const params =
-            new URLSearchParams(
-                window.location.search
-            );
-
-        const urlRoom =
-            params.get("room") ||
-            params.get("r");
-
-        const savedRoom =
-            localStorage.getItem(
-                "last_room"
-            );
-
-        roomId =
-            (
-                urlRoom ||
-                savedRoom ||
-                ""
-            ).toLowerCase().trim();
-
-        if (roomId) {
-
-            localStorage.setItem(
-                "last_room",
-                roomId
-            );
-
-        }
-
-        document.getElementById(
-            "room-code"
-        ).innerText =
-            roomId || "ไม่พบ Room";
-
-    }
-
-
-    /* =========================================================
-       PEERJS
-    ========================================================= */
-
-    function initPeer() {
-
-        if (!roomId) {
-
-            setConnection(
-                "ไม่พบ Room",
-                false
-            );
-
-            return;
-
-        }
-
-        setConnection(
-            "กำลังเชื่อมต่อ",
-            false
+    const params =
+        new URLSearchParams(
+            window.location.search
         );
 
-        try {
+    /*
+     * รองรับทั้ง
+     *
+     * /controller.html?room=room_ABCDE
+     *
+     * และ
+     *
+     * /controller.html?r=room_ABCDE
+     */
 
-            peer =
-                new Peer();
+    const urlRoom =
+        params.get("room") ||
+        params.get("r");
 
-        } catch (error) {
-
-            console.error(
-                error
-            );
-
-            setConnection(
-                "PeerJS ผิดพลาด",
-                false
-            );
-
-            return;
-
-        }
-
-        peer.on(
-            "open",
-            () => {
-
-                console.log(
-                    "Controller Peer:",
-                    peer.id
-                );
-
-                connectToTV();
-
-            }
+    const savedRoom =
+        localStorage.getItem(
+            "last_room"
         );
 
-        peer.on(
-            "error",
-            error => {
+    /*
+     * สำคัญ:
+     * ห้าม toLowerCase()
+     *
+     * ต้องใช้ Room ID เดียวกับ TV
+     */
 
-                console.error(
-                    "PeerJS error:",
-                    error
-                );
+    roomId =
+        (
+            urlRoom ||
+            savedRoom ||
+            ""
+        ).trim();
 
-                setConnection(
-                    "เชื่อมต่อใหม่...",
-                    false
-                );
+    /*
+     * ถ้า QR มี Room ให้ถือ QR
+     * เป็นค่าหลักเสมอ
+     */
 
-                scheduleReconnect();
+    if (urlRoom) {
 
-            }
-        );
-
-    }
-
-
-    /* =========================================================
-       CONNECT TV
-    ========================================================= */
-
-    function connectToTV() {
-
-        if (
-            !peer ||
-            !roomId
-        ) {
-            return;
-        }
-
-        if (conn) {
-
-            try {
-                conn.close();
-            } catch {}
-
-        }
-
-        console.log(
-            "Connecting to TV:",
+        localStorage.setItem(
+            "last_room",
             roomId
         );
 
+    }
+
+    document.getElementById(
+        "room-code"
+    ).innerText =
+        roomId || "ไม่พบ Room";
+
+}
+
+
+/* =========================================================
+   PEERJS
+========================================================= */
+
+function initPeer() {
+
+    if (!roomId) {
+
         setConnection(
-            "กำลังเชื่อมต่อ TV",
+            "ไม่พบ Room",
             false
         );
 
-        conn =
-            peer.connect(
-                roomId,
-                {
-                    reliable: true
-                }
-            );
-
-        conn.on(
-            "open",
-            () => {
-
-                console.log(
-                    "Connected to TV"
-                );
-
-                setConnection(
-                    "เชื่อมต่อแล้ว",
-                    true
-                );
-
-                showToast(
-                    "🟢 เชื่อมต่อ TV แล้ว"
-                );
-
-            }
+        showToast(
+            "❌ QR ไม่มี Room ID"
         );
 
-        conn.on(
-            "data",
-            handleData
+        return;
+    }
+
+    setConnection(
+        "กำลังเชื่อมต่อ",
+        false
+    );
+
+    /*
+     * ถ้ามี Peer เดิมอยู่แล้ว
+     * ปิดก่อนสร้างใหม่
+     */
+
+    if (peer) {
+
+        try {
+            peer.destroy();
+        } catch {}
+
+        peer = null;
+    }
+
+    try {
+
+        /*
+         * Controller ใช้ random Peer ID
+         *
+         * แล้ว connect ไปหา
+         * TV ที่ใช้ roomId เป็น Peer ID
+         */
+
+        peer = new Peer();
+
+    } catch (error) {
+
+        console.error(
+            "Peer create error:",
+            error
         );
 
-        conn.on(
-            "close",
-            () => {
-
-                console.log(
-                    "TV connection closed"
-                );
-
-                setConnection(
-                    "TV หลุดการเชื่อมต่อ",
-                    false
-                );
-
-                scheduleReconnect();
-
-            }
+        setConnection(
+            "PeerJS ผิดพลาด",
+            false
         );
 
-        conn.on(
-            "error",
-            error => {
+        scheduleReconnect();
 
-                console.error(
-                    "Connection error:",
-                    error
-                );
-
-                setConnection(
-                    "เชื่อมต่อไม่สำเร็จ",
-                    false
-                );
-
-                scheduleReconnect();
-
-            }
-        );
-
+        return;
     }
 
 
-    /* =========================================================
-       RECONNECT
-    ========================================================= */
+    peer.on(
+        "open",
+        peerId => {
 
-    function scheduleReconnect() {
+            console.log(
+                "Controller Peer:",
+                peerId
+            );
 
-        if (reconnectTimer) {
-            return;
+            connectToTV();
+
         }
+    );
 
-        reconnectTimer =
-            setTimeout(
-                () => {
 
-                    reconnectTimer =
-                        null;
+    peer.on(
+        "error",
+        error => {
 
-                    if (
-                        peer &&
-                        !peer.destroyed
-                    ) {
+            console.error(
+                "PeerJS error:",
+                error
+            );
 
-                        connectToTV();
+            setConnection(
+                "เชื่อมต่อใหม่...",
+                false
+            );
 
-                    } else {
+            scheduleReconnect();
 
+        }
+    );
+
+
+    peer.on(
+        "disconnected",
+        () => {
+
+            console.log(
+                "Peer disconnected"
+            );
+
+            setConnection(
+                "Peer หลุด...",
+                false
+            );
+
+            scheduleReconnect();
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   CONNECT TO TV
+========================================================= */
+
+function connectToTV() {
+
+    if (
+        !peer ||
+        peer.destroyed ||
+        !roomId
+    ) {
+        return;
+    }
+
+
+    if (conn) {
+
+        try {
+            conn.close();
+        } catch {}
+
+        conn = null;
+    }
+
+
+    console.log(
+        "Connecting to TV:",
+        roomId
+    );
+
+
+    setConnection(
+        "กำลังเชื่อมต่อ TV",
+        false
+    );
+
+
+    /*
+     * สำคัญมาก
+     *
+     * roomId ต้องตรงกับ
+     * Peer ID ของ TV
+     */
+
+    conn =
+        peer.connect(
+            roomId,
+            {
+                reliable: true
+            }
+        );
+
+
+    conn.on(
+        "open",
+        () => {
+
+            console.log(
+                "Connected to TV:",
+                roomId
+            );
+
+            setConnection(
+                "เชื่อมต่อแล้ว",
+                true
+            );
+
+            showToast(
+                "🟢 เชื่อมต่อ TV แล้ว"
+            );
+
+        }
+    );
+
+
+    conn.on(
+        "data",
+        handleData
+    );
+
+
+    conn.on(
+        "close",
+        () => {
+
+            console.log(
+                "TV connection closed"
+            );
+
+            setConnection(
+                "TV หลุดการเชื่อมต่อ",
+                false
+            );
+
+            scheduleReconnect();
+
+        }
+    );
+
+
+    conn.on(
+        "error",
+        error => {
+
+            console.error(
+                "Connection error:",
+                error
+            );
+
+            setConnection(
+                "เชื่อมต่อไม่สำเร็จ",
+                false
+            );
+
+            scheduleReconnect();
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   RECONNECT
+========================================================= */
+
+function scheduleReconnect() {
+
+    if (reconnectTimer) {
+        return;
+    }
+
+    reconnectTimer =
+        setTimeout(
+            () => {
+
+                reconnectTimer = null;
+
+                if (
+                    !peer ||
+                    peer.destroyed
+                ) {
+
+                    initPeer();
+
+                    return;
+                }
+
+                if (
+                    peer.disconnected
+                ) {
+
+                    try {
+                        peer.reconnect();
+                    } catch {
                         initPeer();
-
                     }
 
-                },
-                3000
-            );
+                    return;
+                }
+
+                connectToTV();
+
+            },
+            3000
+        );
+
+}
+
+
+/* =========================================================
+   RECEIVE DATA
+========================================================= */
+
+function handleData(data) {
+
+    if (
+        !data ||
+        !data.type
+    ) {
+        return;
+    }
+
+    console.log(
+        "TV:",
+        data
+    );
+
+
+    if (
+        data.type ===
+        "QUEUE_UPDATE"
+    ) {
+
+        currentQueue =
+            Array.isArray(
+                data.queue
+            )
+                ? data.queue
+                : [];
+
+        renderQueue();
 
     }
 
 
-    /* =========================================================
-       RECEIVE DATA
-    ========================================================= */
+    /*
+     * ถ้า TV ส่งสถานะ pause
+     * กลับมาในอนาคต รองรับได้
+     */
 
-    function handleData(data) {
+    if (
+        data.type ===
+        "PLAY_STATE"
+    ) {
+
+        if (
+            typeof data.isPaused ===
+            "boolean"
+        ) {
+
+            isPaused =
+                data.isPaused;
+
+            updatePauseButton();
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   SEND ACTION
+========================================================= */
+
+function sendAction(
+    type,
+    payload = {}
+) {
+
+    if (
+        !conn ||
+        !conn.open
+    ) {
+
+        showToast(
+            "🔴 ยังไม่ได้เชื่อมต่อ TV"
+        );
+
+        return false;
+    }
+
+
+    try {
+
+        conn.send({
+            type,
+            ...payload
+        });
+
+        return true;
+
+    } catch (error) {
+
+        console.error(
+            "Send action error:",
+            error
+        );
+
+        showToast(
+            "ส่งคำสั่งไม่สำเร็จ"
+        );
+
+        return false;
+    }
+
+}
+
+
+/* =========================================================
+   PLAY / PAUSE
+========================================================= */
+
+function togglePlay() {
+
+    const nextPaused =
+        !isPaused;
+
+
+    const success =
+        sendAction(
+            "TOGGLE_PLAY",
+            {
+                isPaused:
+                    nextPaused
+            }
+        );
+
+
+    if (!success) {
+        return;
+    }
+
+
+    isPaused =
+        nextPaused;
+
+
+    updatePauseButton();
+
+}
+
+
+function updatePauseButton() {
+
+    const button =
+        document.getElementById(
+            "pause-btn"
+        );
+
+
+    button.innerText =
+        isPaused
+            ? "▶️ เล่นต่อ"
+            : "⏸️ หยุดชั่วคราว";
+
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+async function searchMusic() {
+
+    const input =
+        document.getElementById(
+            "search-input"
+        );
+
+
+    const q =
+        input.value.trim();
+
+
+    if (!q) {
+
+        input.focus();
+
+        return;
+    }
+
+
+    const results =
+        document.getElementById(
+            "results"
+        );
+
+
+    const count =
+        document.getElementById(
+            "result-count"
+        );
+
+
+    results.innerHTML = `
+        <div class="loading">
+            🔎 กำลังค้นหาเพลง...
+        </div>
+    `;
+
+
+    count.innerText = "";
+
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/search?q=${encodeURIComponent(q)}`
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                `HTTP ${response.status}`
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
 
         if (
             !data ||
-            !data.type
-        ) {
-            return;
-        }
-
-        console.log(
-            "TV:",
-            data
-        );
-
-        if (
-            data.type ===
-            "QUEUE_UPDATE"
-        ) {
-
-            currentQueue =
-                Array.isArray(
-                    data.queue
-                )
-                    ? data.queue
-                    : [];
-
-            renderQueue();
-
-        }
-
-    }
-
-
-    /* =========================================================
-       SEND ACTION
-    ========================================================= */
-
-    function sendAction(
-        type,
-        payload = {}
-    ) {
-
-        if (
-            !conn ||
-            !conn.open
-        ) {
-
-            showToast(
-                "🔴 ยังไม่ได้เชื่อมต่อ TV"
-            );
-
-            return false;
-
-        }
-
-        try {
-
-            conn.send({
-                type,
-                ...payload
-            });
-
-            return true;
-
-        } catch (error) {
-
-            console.error(
-                error
-            );
-
-            showToast(
-                "ส่งคำสั่งไม่สำเร็จ"
-            );
-
-            return false;
-
-        }
-
-    }
-
-
-    /* =========================================================
-       PLAY / PAUSE
-    ========================================================= */
-
-    function togglePlay() {
-
-        isPaused =
-            !isPaused;
-
-        const success =
-            sendAction(
-                "TOGGLE_PLAY",
-                {
-                    isPaused
-                }
-            );
-
-        if (!success) {
-
-            isPaused =
-                !isPaused;
-
-            return;
-
-        }
-
-        updatePauseButton();
-
-    }
-
-
-    function updatePauseButton() {
-
-        const button =
-            document.getElementById(
-                "pause-btn"
-            );
-
-        button.innerText =
-            isPaused
-                ? "▶️ เล่นต่อ"
-                : "⏸️ หยุดชั่วคราว";
-
-    }
-
-
-    /* =========================================================
-       SEARCH
-    ========================================================= */
-
-    async function searchMusic() {
-
-        const input =
-            document.getElementById(
-                "search-input"
-            );
-
-        const q =
-            input.value.trim();
-
-        if (!q) {
-
-            input.focus();
-
-            return;
-
-        }
-
-        const results =
-            document.getElementById(
-                "results"
-            );
-
-        const count =
-            document.getElementById(
-                "result-count"
-            );
-
-        results.innerHTML = `
-            <div class="loading">
-                🔎 กำลังค้นหาเพลง...
-            </div>
-        `;
-
-        count.innerText = "";
-
-        try {
-
-            const response =
-                await fetch(
-                    `/api/search?q=${encodeURIComponent(q)}`
-                );
-
-            if (!response.ok) {
-
-                throw new Error(
-                    `HTTP ${response.status}`
-                );
-
-            }
-
-            const data =
-                await response.json();
-
-            /*
-             * API ของเรา:
-             *
-             * {
-             *   success: true,
-             *   results: [...]
-             * }
-             */
-
-            if (
-                !data ||
-                data.success !== true ||
-                !Array.isArray(
-                    data.results
-                )
-            ) {
-
-                throw new Error(
-                    data?.error ||
-                    "รูปแบบข้อมูลไม่ถูกต้อง"
-                );
-
-            }
-
-            const songs =
-                data.results;
-
-            count.innerText =
-                `${songs.length} รายการ`;
-
-            if (
-                songs.length === 0
-            ) {
-
-                results.innerHTML = `
-                    <div class="loading">
-                        😢 ไม่พบเพลง
-                    </div>
-                `;
-
-                return;
-
-            }
-
-            results.innerHTML =
-                songs.map(
-                    song =>
-                        createResultHtml(
-                            song
-                        )
-                ).join("");
-
-        } catch (error) {
-
-            console.error(
-                "Search error:",
-                error
-            );
-
-            results.innerHTML = `
-                <div class="error">
-                    ❌ ค้นหาไม่สำเร็จ
-                    <br>
-                    <small>
-                        ${escapeHtml(
-                            error.message
-                        )}
-                    </small>
-                </div>
-            `;
-
-        }
-
-    }
-
-
-    /* =========================================================
-       SEARCH RESULT
-    ========================================================= */
-
-    function createResultHtml(
-        song
-    ) {
-
-        const safeSong =
-            encodeURIComponent(
-                JSON.stringify(song)
-            );
-
-        const thumbnail =
-            song.thumbnail ||
-            `https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`;
-
-        const channel =
-            song.channel ||
-            song.author ||
-            "";
-
-        const duration =
-            song.duration
-                ? ` • ${song.duration}`
-                : "";
-
-        return `
-            <div class="result-item">
-
-                <img
-                    class="result-thumb"
-                    src="${escapeHtml(
-                        thumbnail
-                    )}"
-                    loading="lazy"
-                    onerror="this.style.visibility='hidden'"
-                >
-
-                <div class="result-info">
-
-                    <div class="result-title">
-                        ${escapeHtml(
-                            song.title ||
-                            "ไม่ทราบชื่อ"
-                        )}
-                    </div>
-
-                    <div class="result-meta">
-                        ${escapeHtml(
-                            channel
-                        )}
-                        ${escapeHtml(
-                            duration
-                        )}
-                    </div>
-
-                </div>
-
-                <button
-                    class="btn-add"
-                    data-song="${safeSong}"
-                    onclick="addSongFromButton(this)"
-                >
-                    ＋ จอง
-                </button>
-
-            </div>
-        `;
-
-    }
-
-
-    /* =========================================================
-       ADD SONG
-    ========================================================= */
-
-    function addSongFromButton(
-        button
-    ) {
-
-        try {
-
-            const encoded =
-                button.dataset.song;
-
-            const song =
-                JSON.parse(
-                    decodeURIComponent(
-                        encoded
-                    )
-                );
-
-            addSong(song);
-
-        } catch (error) {
-
-            console.error(
-                error
-            );
-
-            showToast(
-                "เพิ่มเพลงไม่สำเร็จ"
-            );
-
-        }
-
-    }
-
-
-    function addSong(song) {
-
-        if (
-            !song ||
-            !song.videoId
-        ) {
-
-            showToast(
-                "เพลงนี้ไม่มี Video ID"
-            );
-
-            return;
-
-        }
-
-        /*
-         * ตรวจเพลงซ้ำ
-         */
-
-        if (
-            currentQueue.some(
-                item =>
-                    item.videoId ===
-                    song.videoId
+            data.success !== true ||
+            !Array.isArray(
+                data.results
             )
         ) {
 
-            showToast(
-                "🎵 เพลงนี้อยู่ในคิวแล้ว"
+            throw new Error(
+                data?.error ||
+                "รูปแบบข้อมูลไม่ถูกต้อง"
             );
-
-            return;
 
         }
 
-        const success =
-            sendAction(
-                "ADD_SONG",
-                {
-                    song
-                }
-            );
 
-        if (success) {
+        const songs =
+            data.results;
 
-            showToast(
-                "🎵 เพิ่มเพลงเข้าคิวแล้ว"
-            );
-
-            /*
-             * ไม่เพิ่มเข้า currentQueue
-             * เอง เพราะให้ TV เป็น
-             * Source of Truth
-             */
-
-        }
-
-    }
-
-
-    /* =========================================================
-       QUEUE RENDER
-    ========================================================= */
-
-    function renderQueue() {
-
-        const list =
-            document.getElementById(
-                "queue-list"
-            );
-
-        const count =
-            document.getElementById(
-                "queue-count"
-            );
 
         count.innerText =
-            `${currentQueue.length} เพลง`;
+            `${songs.length} รายการ`;
+
 
         if (
-            currentQueue.length === 0
+            songs.length === 0
         ) {
 
-            list.innerHTML = `
-                <div class="queue-empty">
-                    🎵 ยังไม่มีเพลงในคิว
+            results.innerHTML = `
+                <div class="loading">
+                    😢 ไม่พบเพลง
                 </div>
             `;
 
             return;
-
         }
 
-        list.innerHTML =
-            currentQueue.map(
-                (song, index) => {
 
-                    const isPlaying =
-                        index === 0;
+        results.innerHTML =
+            songs.map(
+                song =>
+                    createResultHtml(
+                        song
+                    )
+            ).join("");
 
-                    return `
-                        <div
-                            class="queue-item ${
+
+    } catch (error) {
+
+        console.error(
+            "Search error:",
+            error
+        );
+
+
+        results.innerHTML = `
+            <div class="error">
+                ❌ ค้นหาไม่สำเร็จ
+                <br>
+                <small>
+                    ${escapeHtml(
+                        error.message
+                    )}
+                </small>
+            </div>
+        `;
+
+    }
+
+}
+
+
+/* =========================================================
+   SEARCH RESULT
+========================================================= */
+
+function createResultHtml(
+    song
+) {
+
+    const safeSong =
+        encodeURIComponent(
+            JSON.stringify(song)
+        );
+
+
+    const thumbnail =
+        song.thumbnail ||
+        `https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`;
+
+
+    const channel =
+        song.channel ||
+        song.author ||
+        "";
+
+
+    const duration =
+        song.duration
+            ? ` • ${song.duration}`
+            : "";
+
+
+    return `
+        <div class="result-item">
+
+            <img
+                class="result-thumb"
+                src="${escapeHtml(
+                    thumbnail
+                )}"
+                loading="lazy"
+                onerror="this.style.visibility='hidden'"
+            >
+
+            <div class="result-info">
+
+                <div class="result-title">
+                    ${escapeHtml(
+                        song.title ||
+                        "ไม่ทราบชื่อ"
+                    )}
+                </div>
+
+                <div class="result-meta">
+                    ${escapeHtml(
+                        channel
+                    )}
+                    ${escapeHtml(
+                        duration
+                    )}
+                </div>
+
+            </div>
+
+            <button
+                class="btn-add"
+                data-song="${safeSong}"
+                onclick="addSongFromButton(this)"
+            >
+                ＋ จอง
+            </button>
+
+        </div>
+    `;
+
+}
+
+
+/* =========================================================
+   ADD SONG
+========================================================= */
+
+function addSongFromButton(
+    button
+) {
+
+    try {
+
+        const encoded =
+            button.dataset.song;
+
+
+        const song =
+            JSON.parse(
+                decodeURIComponent(
+                    encoded
+                )
+            );
+
+
+        addSong(song);
+
+    } catch (error) {
+
+        console.error(
+            error
+        );
+
+        showToast(
+            "เพิ่มเพลงไม่สำเร็จ"
+        );
+
+    }
+
+}
+
+
+function addSong(song) {
+
+    if (
+        !song ||
+        !song.videoId
+    ) {
+
+        showToast(
+            "เพลงนี้ไม่มี Video ID"
+        );
+
+        return;
+    }
+
+
+    /*
+     * ตรวจเพลงซ้ำจากคิวที่ TV ส่งมา
+     */
+
+    if (
+        currentQueue.some(
+            item =>
+                item.videoId ===
+                song.videoId
+        )
+    ) {
+
+        showToast(
+            "🎵 เพลงนี้อยู่ในคิวแล้ว"
+        );
+
+        return;
+    }
+
+
+    const success =
+        sendAction(
+            "ADD_SONG",
+            {
+                song
+            }
+        );
+
+
+    if (success) {
+
+        showToast(
+            "🎵 เพิ่มเพลงเข้าคิวแล้ว"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   QUEUE RENDER
+========================================================= */
+
+function renderQueue() {
+
+    const list =
+        document.getElementById(
+            "queue-list"
+        );
+
+
+    const count =
+        document.getElementById(
+            "queue-count"
+        );
+
+
+    count.innerText =
+        `${currentQueue.length} เพลง`;
+
+
+    if (
+        currentQueue.length === 0
+    ) {
+
+        list.innerHTML = `
+            <div class="queue-empty">
+                🎵 ยังไม่มีเพลงในคิว
+            </div>
+        `;
+
+        return;
+    }
+
+
+    list.innerHTML =
+        currentQueue.map(
+            (song, index) => {
+
+                const isPlaying =
+                    index === 0;
+
+
+                return `
+                    <div
+                        class="queue-item ${
+                            isPlaying
+                                ? "playing"
+                                : ""
+                        }"
+                    >
+
+                        <div class="queue-number">
+                            ${
                                 isPlaying
-                                    ? "playing"
+                                    ? "▶"
+                                    : index + 1
+                            }
+                        </div>
+
+
+                        <div class="queue-info">
+
+                            ${
+                                isPlaying
+                                    ? `
+                                        <div class="queue-status">
+                                            กำลังเล่น
+                                        </div>
+                                      `
                                     : ""
-                            }"
-                        >
+                            }
 
-                            <div class="queue-number">
-                                ${
-                                    isPlaying
-                                        ? "▶"
-                                        : index + 1
-                                }
+
+                            <div class="queue-title">
+                                ${escapeHtml(
+                                    song.title ||
+                                    "ไม่ทราบชื่อ"
+                                )}
                             </div>
 
-                            <div class="queue-info">
 
-                                ${
-                                    isPlaying
-                                        ? `
-                                            <div class="queue-status">
-                                                กำลังเล่น
-                                            </div>
-                                          `
-                                        : ""
-                                }
-
-                                <div class="queue-title">
-                                    ${escapeHtml(
-                                        song.title ||
-                                        "ไม่ทราบชื่อ"
-                                    )}
-                                </div>
-
-                                <div class="queue-channel">
-                                    ${escapeHtml(
-                                        song.channel ||
-                                        song.author ||
-                                        ""
-                                    )}
-                                </div>
-
-                            </div>
-
-                            <div class="queue-actions">
-
-                                ${
-                                    isPlaying
-                                        ? `
-                                            <button
-                                                class="queue-btn retry"
-                                                onclick="retryPlay()"
-                                            >
-                                                เริ่มใหม่
-                                            </button>
-                                          `
-                                        : ""
-                                }
-
-                                ${
-                                    index > 0
-                                        ? `
-                                            <button
-                                                class="queue-btn orange"
-                                                onclick="moveSong(
-                                                    ${index},
-                                                    'up'
-                                                )"
-                                            >
-                                                ▲
-                                            </button>
-                                          `
-                                        : ""
-                                }
-
-                                ${
-                                    index > 0 &&
-                                    index <
-                                        currentQueue.length - 1
-                                        ? `
-                                            <button
-                                                class="queue-btn orange"
-                                                onclick="moveSong(
-                                                    ${index},
-                                                    'down'
-                                                )"
-                                            >
-                                                ▼
-                                            </button>
-                                          `
-                                        : ""
-                                }
-
-                                ${
-                                    !isPlaying
-                                        ? `
-                                            <button
-                                                class="queue-btn red"
-                                                onclick="deleteSong(
-                                                    ${index}
-                                                )"
-                                            >
-                                                🗑
-                                            </button>
-                                          `
-                                        : ""
-                                }
-
+                            <div class="queue-channel">
+                                ${escapeHtml(
+                                    song.channel ||
+                                    song.author ||
+                                    ""
+                                )}
                             </div>
 
                         </div>
-                    `;
-
-                }
-            )
-            .join("");
-
-    }
 
 
-    /* =========================================================
-       QUEUE ACTIONS
-    ========================================================= */
+                        <div class="queue-actions">
 
-    function deleteSong(index) {
+                            ${
+                                isPlaying
+                                    ? `
+                                        <button
+                                            class="queue-btn retry"
+                                            onclick="retryPlay()"
+                                        >
+                                            เริ่มใหม่
+                                        </button>
+                                      `
+                                    : ""
+                            }
 
-        if (
-            index < 0 ||
-            index >= currentQueue.length
-        ) {
 
-            return;
+                            ${
+                                index > 1
+                                    ? `
+                                        <button
+                                            class="queue-btn orange"
+                                            onclick="moveSong(
+                                                ${index},
+                                                'up'
+                                            )"
+                                        >
+                                            ▲
+                                        </button>
+                                      `
+                                    : ""
+                            }
 
-        }
 
-        const song =
-            currentQueue[index];
+                            ${
+                                index > 0 &&
+                                index <
+                                    currentQueue.length - 1
+                                    ? `
+                                        <button
+                                            class="queue-btn orange"
+                                            onclick="moveSong(
+                                                ${index},
+                                                'down'
+                                            )"
+                                        >
+                                            ▼
+                                        </button>
+                                      `
+                                    : ""
+                            }
 
-        const title =
-            song?.title ||
-            "เพลงนี้";
 
-        if (
-            !confirm(
-                `ลบ "${title}" ออกจากคิว?`
-            )
-        ) {
+                            ${
+                                !isPlaying
+                                    ? `
+                                        <button
+                                            class="queue-btn red"
+                                            onclick="deleteSong(
+                                                ${index}
+                                            )"
+                                        >
+                                            🗑
+                                        </button>
+                                      `
+                                    : ""
+                            }
 
-            return;
+                        </div>
 
-        }
+                    </div>
+                `;
 
-        sendAction(
-            "DELETE_SONG",
-            {
-                index
             }
-        );
+        )
+        .join("");
 
-    }
+}
 
 
-    function moveSong(
-        index,
-        direction
+/* =========================================================
+   DELETE SONG
+========================================================= */
+
+function deleteSong(index) {
+
+    if (
+        index < 0 ||
+        index >= currentQueue.length
     ) {
-
-        sendAction(
-            "MOVE_SONG",
-            {
-                index,
-                direction
-            }
-        );
-
+        return;
     }
 
 
-    function retryPlay() {
+    const song =
+        currentQueue[index];
 
+
+    const title =
+        song?.title ||
+        "เพลงนี้";
+
+
+    if (
+        !confirm(
+            `ลบ "${title}" ออกจากคิว?`
+        )
+    ) {
+        return;
+    }
+
+
+    sendAction(
+        "DELETE_SONG",
+        {
+            index
+        }
+    );
+
+}
+
+
+/* =========================================================
+   MOVE SONG
+========================================================= */
+
+function moveSong(
+    index,
+    direction
+) {
+
+    /*
+     * ส่งรูปแบบเดียวกับ
+     * Controller เดิม
+     *
+     * display.html ต้องรองรับ
+     * index + direction
+     */
+
+    sendAction(
+        "MOVE_SONG",
+        {
+            index,
+            direction
+        }
+    );
+
+}
+
+
+/* =========================================================
+   RETRY
+========================================================= */
+
+function retryPlay() {
+
+    const success =
         sendAction(
             "RETRY_PLAY"
         );
+
+
+    if (success) {
 
         showToast(
             "🔄 เริ่มเพลงใหม่"
@@ -1846,158 +1987,167 @@
 
     }
 
-
-    /* =========================================================
-       CONNECTION UI
-    ========================================================= */
-
-    function setConnection(
-        text,
-        online
-    ) {
-
-        const box =
-            document.getElementById(
-                "connection"
-            );
-
-        const label =
-            document.getElementById(
-                "connection-text"
-            );
-
-        label.innerText =
-            text;
-
-        if (online) {
-
-            box.classList.add(
-                "online"
-            );
-
-        } else {
-
-            box.classList.remove(
-                "online"
-            );
-
-        }
-
-    }
+}
 
 
-    /* =========================================================
-       TOAST
-    ========================================================= */
+/* =========================================================
+   CONNECTION UI
+========================================================= */
 
-    function showToast(
-        message
-    ) {
+function setConnection(
+    text,
+    online
+) {
 
-        const toast =
-            document.getElementById(
-                "toast"
-            );
-
-        toast.innerText =
-            message;
-
-        toast.classList.add(
-            "show"
+    const box =
+        document.getElementById(
+            "connection"
         );
 
-        if (toastTimer) {
 
-            clearTimeout(
-                toastTimer
-            );
+    const label =
+        document.getElementById(
+            "connection-text"
+        );
 
-        }
 
-        toastTimer =
-            setTimeout(
-                () => {
+    label.innerText =
+        text;
 
-                    toast.classList.remove(
-                        "show"
-                    );
 
-                },
-                2200
-            );
+    if (online) {
+
+        box.classList.add(
+            "online"
+        );
+
+    } else {
+
+        box.classList.remove(
+            "online"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+function showToast(
+    message
+) {
+
+    const toast =
+        document.getElementById(
+            "toast"
+        );
+
+
+    toast.innerText =
+        message;
+
+
+    toast.classList.add(
+        "show"
+    );
+
+
+    if (toastTimer) {
+
+        clearTimeout(
+            toastTimer
+        );
 
     }
 
 
-    /* =========================================================
-       HTML ESCAPE
-    ========================================================= */
+    toastTimer =
+        setTimeout(
+            () => {
 
-    function escapeHtml(
-        value
-    ) {
+                toast.classList.remove(
+                    "show"
+                );
 
-        return String(
-            value ?? ""
+            },
+            2200
+        );
+
+}
+
+
+/* =========================================================
+   HTML ESCAPE
+========================================================= */
+
+function escapeHtml(
+    value
+) {
+
+    return String(
+        value ?? ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
         )
-            .replace(
-                /&/g,
-                "&amp;"
-            )
-            .replace(
-                /</g,
-                "&lt;"
-            )
-            .replace(
-                />/g,
-                "&gt;"
-            )
-            .replace(
-                /"/g,
-                "&quot;"
-            )
-            .replace(
-                /'/g,
-                "&#039;"
-            );
-
-    }
-
-
-    /* =========================================================
-       ENTER SEARCH
-    ========================================================= */
-
-    document
-        .getElementById(
-            "search-input"
+        .replace(
+            /</g,
+            "&lt;"
         )
-        .addEventListener(
-            "keydown",
-            event => {
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
-                if (
-                    event.key ===
-                    "Enter"
-                ) {
+}
 
-                    searchMusic();
 
-                }
+/* =========================================================
+   ENTER SEARCH
+========================================================= */
+
+document
+    .getElementById(
+        "search-input"
+    )
+    .addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key ===
+                "Enter"
+            ) {
+
+                searchMusic();
 
             }
-        );
+
+        }
+    );
 
 
-    /* =========================================================
-       INIT
-    ========================================================= */
+/* =========================================================
+   INIT
+========================================================= */
 
-    getRoom();
+getRoom();
 
-    initPeer();
+initPeer();
 
-    renderQueue();
+renderQueue();
 
 </script>
 
