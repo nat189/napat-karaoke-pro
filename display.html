@@ -36,7 +36,7 @@
         }
 
         /* =========================================================
-           BACKGROUND
+           BACKGROUND / SCREEN SERVER
         ========================================================= */
 
         #background {
@@ -549,7 +549,7 @@
         }
 
         /* =========================================================
-           EMPTY STATE
+           EMPTY / SCREEN SERVER
         ========================================================= */
 
         #empty-state {
@@ -570,7 +570,9 @@
 
         .empty-icon {
             font-size: 70px;
-            filter: drop-shadow(0 10px 30px rgba(255, 45, 85, 0.25));
+            filter: drop-shadow(
+                0 10px 30px rgba(255, 45, 85, 0.25)
+            );
         }
 
         .empty-title {
@@ -590,6 +592,7 @@
         ========================================================= */
 
         @media (max-width: 900px) {
+
             #queue-box {
                 width: 280px;
             }
@@ -609,6 +612,7 @@
         }
 
         @media (max-width: 650px) {
+
             #top-bar {
                 left: 14px;
                 right: 14px;
@@ -652,12 +656,21 @@
 <body>
 
     <!-- =========================================================
-         BACKGROUND
+         BACKGROUND / SCREEN SERVER
     ========================================================== -->
 
     <div id="background">
-        <div class="bg-layer active" id="bg1"></div>
-        <div class="bg-layer" id="bg2"></div>
+
+        <div
+            class="bg-layer active"
+            id="bg1"
+        ></div>
+
+        <div
+            class="bg-layer"
+            id="bg2"
+        ></div>
+
     </div>
 
     <div id="app">
@@ -677,15 +690,27 @@
         <div id="top-bar">
 
             <div class="brand">
-                <div class="brand-icon">🎤</div>
+
+                <div class="brand-icon">
+                    🎤
+                </div>
 
                 <div class="brand-text">
-                    <strong>Napat Karaoke Pro</strong>
-                    <span>TV Display</span>
+
+                    <strong>
+                        Napat Karaoke Pro
+                    </strong>
+
+                    <span>
+                        TV Display
+                    </span>
+
                 </div>
+
             </div>
 
             <div class="status">
+
                 <span
                     id="status-dot"
                     class="status-dot"
@@ -694,6 +719,7 @@
                 <span id="status-text">
                     กำลังเริ่มระบบ...
                 </span>
+
             </div>
 
         </div>
@@ -724,7 +750,7 @@
         </div>
 
         <!-- =====================================================
-             EMPTY
+             EMPTY / SCREEN SERVER
         ====================================================== -->
 
         <div id="empty-state">
@@ -860,7 +886,8 @@
     ========================================================== -->
 
     <script>
-        let tag = document.createElement("script");
+        const tag =
+            document.createElement("script");
 
         tag.src =
             "https://www.youtube.com/iframe_api";
@@ -869,6 +896,7 @@
     </script>
 
     <script>
+
         /* =========================================================
            STATE
         ========================================================= */
@@ -883,14 +911,30 @@
         let player = null;
 
         let isAppReady = false;
-        let isEnding = false;
+
+        /*
+         * สำคัญ:
+         * ใช้ล็อกการเปลี่ยนเพลง
+         * ป้องกัน ENDED ถูกเรียกซ้ำ
+         */
+        let isTransitioning = false;
+
+        /*
+         * timer สำหรับเปลี่ยนเพลงหลังแสดงคะแนน
+         */
+        let nextSongTimer = null;
 
         let uiTimer = null;
+
         let scoreTimer = null;
 
         let bgTimer = null;
+
         let bgIndex = 0;
+
         let activeBg = 1;
+
+        let scoreWatcher = null;
 
         /* =========================================================
            BACKGROUNDS
@@ -920,7 +964,9 @@
                 params.get("r");
 
             const savedRoom =
-                sessionStorage.getItem("k_room");
+                sessionStorage.getItem(
+                    "k_room"
+                );
 
             if (urlRoom) {
 
@@ -929,7 +975,8 @@
 
             } else if (savedRoom) {
 
-                currentRoom = savedRoom;
+                currentRoom =
+                    savedRoom;
 
             } else {
 
@@ -947,7 +994,8 @@
 
             document.getElementById(
                 "room-code"
-            ).innerText = currentRoom;
+            ).innerText =
+                currentRoom;
 
             createQRCode();
         }
@@ -966,12 +1014,17 @@
             qr.innerHTML = "";
 
             new QRCode(qr, {
+
                 text:
                     `${window.location.origin}/controller.html?room=${encodeURIComponent(currentRoom)}`,
+
                 width: 170,
+
                 height: 170,
+
                 correctLevel:
                     QRCode.CorrectLevel.M
+
             });
         }
 
@@ -986,87 +1039,138 @@
                 false
             );
 
-            peer = new Peer(currentRoom);
+            try {
 
-            peer.on("open", () => {
+                peer =
+                    new Peer(currentRoom);
 
-                setPeerStatus(
-                    "พร้อมใช้งาน",
-                    true
-                );
-
-            });
-
-            peer.on("connection", conn => {
-
-                connObj = conn;
-
-                conn.on("open", () => {
-
-                    setPeerStatus(
-                        "มือถือเชื่อมต่อแล้ว",
-                        true
-                    );
-
-                    syncQueue();
-
-                });
-
-                conn.on("data", data => {
-
-                    handleCommand(data);
-
-                });
-
-                conn.on("close", () => {
-
-                    if (connObj === conn) {
-
-                        connObj = null;
-
-                        setPeerStatus(
-                            "รอมือถือ",
-                            false
-                        );
-                    }
-                });
-
-                conn.on("error", error => {
-
-                    console.error(
-                        "Peer connection error:",
-                        error
-                    );
-
-                });
-
-            });
-
-            peer.on("error", error => {
+            } catch (error) {
 
                 console.error(
-                    "Peer error:",
+                    "Peer create error:",
                     error
                 );
 
                 setPeerStatus(
-                    "กำลังเชื่อมต่อใหม่...",
+                    "สร้างห้องไม่สำเร็จ",
                     false
                 );
 
-                setTimeout(() => {
+                return;
+            }
 
-                    try {
-                        if (peer) {
-                            peer.destroy();
+            peer.on(
+                "open",
+                () => {
+
+                    setPeerStatus(
+                        "พร้อมใช้งาน",
+                        true
+                    );
+
+                }
+            );
+
+            peer.on(
+                "connection",
+                conn => {
+
+                    connObj = conn;
+
+                    conn.on(
+                        "open",
+                        () => {
+
+                            setPeerStatus(
+                                "มือถือเชื่อมต่อแล้ว",
+                                true
+                            );
+
+                            syncQueue();
+
                         }
-                    } catch (e) {}
+                    );
 
-                    initPeer();
+                    conn.on(
+                        "data",
+                        data => {
 
-                }, 3000);
+                            handleCommand(
+                                data
+                            );
 
-            });
+                        }
+                    );
+
+                    conn.on(
+                        "close",
+                        () => {
+
+                            if (
+                                connObj ===
+                                conn
+                            ) {
+
+                                connObj =
+                                    null;
+
+                                setPeerStatus(
+                                    "รอมือถือ",
+                                    false
+                                );
+                            }
+
+                        }
+                    );
+
+                    conn.on(
+                        "error",
+                        error => {
+
+                            console.error(
+                                "Peer connection error:",
+                                error
+                            );
+
+                        }
+                    );
+
+                }
+            );
+
+            peer.on(
+                "error",
+                error => {
+
+                    console.error(
+                        "Peer error:",
+                        error
+                    );
+
+                    setPeerStatus(
+                        "กำลังเชื่อมต่อใหม่...",
+                        false
+                    );
+
+                    setTimeout(
+                        () => {
+
+                            try {
+
+                                if (peer) {
+                                    peer.destroy();
+                                }
+
+                            } catch (e) {}
+
+                            initPeer();
+
+                        },
+                        3000
+                    );
+
+                }
+            );
         }
 
         /* =========================================================
@@ -1078,19 +1182,29 @@
             online
         ) {
 
-            document.getElementById(
-                "status-text"
-            ).innerText = text;
+            const statusText =
+                document.getElementById(
+                    "status-text"
+                );
 
             const dot =
                 document.getElementById(
                     "status-dot"
                 );
 
-            dot.classList.toggle(
-                "online",
-                online
-            );
+            if (statusText) {
+                statusText.innerText =
+                    text;
+            }
+
+            if (dot) {
+
+                dot.classList.toggle(
+                    "online",
+                    online
+                );
+
+            }
         }
 
         /* =========================================================
@@ -1099,7 +1213,10 @@
 
         function handleCommand(data) {
 
-            if (!data || !data.type) {
+            if (
+                !data ||
+                !data.type
+            ) {
                 return;
             }
 
@@ -1156,6 +1273,7 @@
                         "Unknown command:",
                         data.type
                     );
+
             }
         }
 
@@ -1163,16 +1281,20 @@
            ADD SONG
         ========================================================= */
 
-        function addSongFromController(song) {
+        function addSongFromController(
+            song
+        ) {
 
-            if (!song || !song.videoId) {
+            if (
+                !song ||
+                !song.videoId
+            ) {
                 return;
             }
 
             /*
-             * ป้องกันเพลงซ้ำ
+             * กันเพลงซ้ำในคิว
              */
-
             if (
                 queue.some(
                     item =>
@@ -1188,11 +1310,21 @@
 
             queue.push(song);
 
+            console.log(
+                "ADD SONG:",
+                song.title
+            );
+
             syncQueue();
 
+            /*
+             * ถ้ายังไม่มีเพลงกำลังเล่น
+             * ให้เริ่มเพลงทันที
+             */
             if (
                 queue.length === 1 &&
-                isAppReady
+                isAppReady &&
+                !isTransitioning
             ) {
 
                 playCurrent();
@@ -1216,10 +1348,13 @@
                 try {
 
                     connObj.send({
+
                         type:
                             "QUEUE_UPDATE",
+
                         queue:
                             queue
+
                     });
 
                 } catch (error) {
@@ -1249,55 +1384,84 @@
                     "queue-count"
                 );
 
+            const queueBox =
+                document.getElementById(
+                    "queue-box"
+                );
+
+            const emptyState =
+                document.getElementById(
+                    "empty-state"
+                );
+
+            const nowPlaying =
+                document.getElementById(
+                    "now-playing"
+                );
+
+            if (!list) {
+                return;
+            }
+
             count.innerText =
                 queue.length;
 
             list.innerHTML = "";
 
-            if (queue.length === 0) {
+            /*
+             * ไม่มีคิว
+             */
+            if (
+                queue.length === 0
+            ) {
 
-                document.getElementById(
-                    "queue-box"
-                ).style.display = "none";
+                queueBox.style.display =
+                    "none";
 
-                document.getElementById(
-                    "now-playing"
-                ).classList.add("hidden");
+                nowPlaying.classList.add(
+                    "hidden"
+                );
 
-                document.getElementById(
-                    "empty-state"
-                ).style.display = "flex";
+                emptyState.style.display =
+                    "flex";
 
                 return;
             }
 
-            document.getElementById(
-                "queue-box"
-            ).style.display = "block";
+            /*
+             * มีคิว
+             */
 
-            document.getElementById(
-                "empty-state"
-            ).style.display = "none";
+            queueBox.style.display =
+                "block";
+
+            emptyState.style.display =
+                "none";
 
             const current =
                 queue[0];
 
-            document.getElementById(
-                "now-playing"
-            ).classList.remove("hidden");
+            nowPlaying.classList.remove(
+                "hidden"
+            );
 
             document.getElementById(
                 "now-title"
             ).innerText =
-                current.title || "ไม่ทราบชื่อเพลง";
+                current.title ||
+                "ไม่ทราบชื่อเพลง";
 
             document.getElementById(
                 "now-channel"
             ).innerText =
-                current.channel || "";
+                current.channel ||
+                "";
 
             queue.forEach(
-                (song, index) => {
+                (
+                    song,
+                    index
+                ) => {
 
                     const item =
                         document.createElement(
@@ -1306,9 +1470,11 @@
 
                     item.className =
                         "queue-item" +
-                        (index === 0
-                            ? " playing"
-                            : "");
+                        (
+                            index === 0
+                                ? " playing"
+                                : ""
+                        );
 
                     const thumb =
                         document.createElement(
@@ -1322,12 +1488,13 @@
                         song.thumbnail ||
                         `https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`;
 
-                    thumb.onerror = () => {
+                    thumb.onerror =
+                        () => {
 
-                        thumb.src =
-                            `https://i.ytimg.com/vi/${song.videoId}/hqdefault.jpg`;
+                            thumb.src =
+                                `https://i.ytimg.com/vi/${song.videoId}/hqdefault.jpg`;
 
-                    };
+                        };
 
                     const info =
                         document.createElement(
@@ -1361,10 +1528,17 @@
                         song.channel ||
                         "";
 
-                    info.appendChild(name);
-                    info.appendChild(sub);
+                    info.appendChild(
+                        name
+                    );
 
-                    if (index === 0) {
+                    info.appendChild(
+                        sub
+                    );
+
+                    if (
+                        index === 0
+                    ) {
 
                         const badge =
                             document.createElement(
@@ -1382,10 +1556,18 @@
                         );
                     }
 
-                    item.appendChild(thumb);
-                    item.appendChild(info);
+                    item.appendChild(
+                        thumb
+                    );
 
-                    list.appendChild(item);
+                    item.appendChild(
+                        info
+                    );
+
+                    list.appendChild(
+                        item
+                    );
+
                 }
             );
         }
@@ -1406,13 +1588,18 @@
             const wasCurrent =
                 index === 0;
 
-            queue.splice(index, 1);
+            queue.splice(
+                index,
+                1
+            );
 
             syncQueue();
 
             if (wasCurrent) {
 
-                if (queue.length > 0) {
+                if (
+                    queue.length > 0
+                ) {
 
                     playCurrent();
 
@@ -1439,9 +1626,8 @@
                     : index + 1;
 
             /*
-             * ห้ามย้ายเพลงที่กำลังเล่น
+             * ห้ามย้ายเพลงปัจจุบัน
              */
-
             if (
                 index <= 0 ||
                 target <= 0 ||
@@ -1468,27 +1654,69 @@
 
         function skipSong() {
 
-            if (queue.length === 0) {
+            if (
+                queue.length === 0
+            ) {
+
+                showIdleScreen();
+
                 return;
             }
 
-            isEnding = true;
+            /*
+             * ยกเลิก timer คะแนนเดิม
+             */
+            clearTimeout(
+                nextSongTimer
+            );
 
             hideScore();
 
+            stopScoreWatcher();
+
+            /*
+             * ล็อกการเปลี่ยนเพลง
+             */
+            isTransitioning =
+                true;
+
+            /*
+             * เอาเพลงปัจจุบันออก
+             */
             queue.shift();
 
+            /*
+             * ส่ง queue ใหม่ทันที
+             */
             syncQueue();
 
-            if (queue.length > 0) {
+            if (
+                queue.length > 0
+            ) {
 
+                /*
+                 * เล่นเพลงถัดไป
+                 */
                 playCurrent();
 
             } else {
 
+                /*
+                 * ไม่มีเพลงแล้ว
+                 */
                 showIdleScreen();
 
             }
+
+            setTimeout(
+                () => {
+
+                    isTransitioning =
+                        false;
+
+                },
+                1200
+            );
         }
 
         /* =========================================================
@@ -1509,7 +1737,9 @@
 
             try {
 
-                if (shouldPause) {
+                if (
+                    shouldPause
+                ) {
 
                     player.pauseVideo();
 
@@ -1540,11 +1770,19 @@
 
             if (
                 !player ||
-                typeof player.seekTo !==
-                    "function"
+                queue.length === 0
             ) {
                 return;
             }
+
+            clearTimeout(
+                nextSongTimer
+            );
+
+            isTransitioning =
+                false;
+
+            hideScore();
 
             try {
 
@@ -1556,10 +1794,6 @@
                 player.playVideo();
 
                 scheduleHideUI();
-
-                /*
-                 * ปิด CC ซ้ำอีกครั้ง
-                 */
 
                 setTimeout(
                     disableYouTubeCaptions,
@@ -1586,11 +1820,17 @@
 
         function playCurrent() {
 
-            isEnding = false;
+            clearTimeout(
+                nextSongTimer
+            );
 
             hideScore();
 
-            if (queue.length === 0) {
+            stopScoreWatcher();
+
+            if (
+                queue.length === 0
+            ) {
 
                 showIdleScreen();
 
@@ -1602,17 +1842,27 @@
             const current =
                 queue[0];
 
+            console.log(
+                "▶ PLAY:",
+                current.title,
+                current.videoId
+            );
+
             document.getElementById(
                 "player-wrapper"
-            ).style.display = "block";
+            ).style.display =
+                "block";
 
             document.getElementById(
                 "empty-state"
-            ).style.display = "none";
+            ).style.display =
+                "none";
 
             document.getElementById(
                 "now-playing"
-            ).classList.remove("hidden");
+            ).classList.remove(
+                "hidden"
+            );
 
             document.getElementById(
                 "now-title"
@@ -1632,25 +1882,35 @@
                     "function"
             ) {
 
-                player.loadVideoById(
-                    current.videoId
-                );
+                try {
 
-                /*
-                 * =================================================
-                 * ปิด YouTube CC / Auto Subtitle
-                 * =================================================
-                 */
+                    /*
+                     * YouTube API:
+                     * loadVideoById จะโหลดและเล่นเพลงนี้
+                     */
 
-                setTimeout(
-                    disableYouTubeCaptions,
-                    500
-                );
+                    player.loadVideoById(
+                        current.videoId
+                    );
 
-                setTimeout(
-                    disableYouTubeCaptions,
-                    2000
-                );
+                    setTimeout(
+                        disableYouTubeCaptions,
+                        500
+                    );
+
+                    setTimeout(
+                        disableYouTubeCaptions,
+                        2000
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "loadVideoById error:",
+                        error
+                    );
+
+                }
 
             }
 
@@ -1658,11 +1918,142 @@
         }
 
         /* =========================================================
-           IDLE
+           SONG FINISHED
+           ========================================================= */
+
+        function finishCurrentSong() {
+
+            /*
+             * ป้องกัน ENDED ซ้ำ
+             */
+            if (
+                isTransitioning
+            ) {
+
+                console.log(
+                    "finishCurrentSong ignored: transitioning"
+                );
+
+                return;
+            }
+
+            if (
+                queue.length === 0
+            ) {
+
+                showIdleScreen();
+
+                return;
+            }
+
+            console.log(
+                "🎵 SONG ENDED:",
+                queue[0]?.title
+            );
+
+            isTransitioning =
+                true;
+
+            stopScoreWatcher();
+
+            /*
+             * ยกเลิก timer เดิม
+             */
+            clearTimeout(
+                nextSongTimer
+            );
+
+            /*
+             * สำคัญที่สุด:
+             * เอาเพลงที่เพิ่งจบออกจากคิวทันที
+             */
+            queue.shift();
+
+            /*
+             * ส่งคิวใหม่ให้มือถือทันที
+             *
+             * ถ้ามีเพลง 3 เพลง:
+             *
+             * เพลง 1 จบ
+             * queue = [เพลง 2, เพลง 3]
+             */
+            syncQueue();
+
+            /*
+             * แสดงคะแนน
+             */
+            showScore();
+
+            /*
+             * รอคะแนนประมาณ 3.5 วินาที
+             * แล้วไปเพลงถัดไป
+             */
+            nextSongTimer =
+                setTimeout(
+                    () => {
+
+                        hideScore();
+
+                        if (
+                            queue.length > 0
+                        ) {
+
+                            console.log(
+                                "▶ NEXT SONG:",
+                                queue[0].title
+                            );
+
+                            playCurrent();
+
+                        } else {
+
+                            console.log(
+                                "🖥️ NO MORE SONGS → SCREEN SERVER"
+                            );
+
+                            showIdleScreen();
+
+                        }
+
+                        /*
+                         * ปลดล็อก
+                         */
+                        setTimeout(
+                            () => {
+
+                                isTransitioning =
+                                    false;
+
+                            },
+                            1000
+                        );
+
+                    },
+                    3500
+                );
+        }
+
+        /* =========================================================
+           IDLE / SCREEN SERVER
         ========================================================= */
 
         function showIdleScreen() {
 
+            console.log(
+                "🖥️ SHOW SCREEN SERVER / IDLE"
+            );
+
+            clearTimeout(
+                nextSongTimer
+            );
+
+            stopScoreWatcher();
+
+            hideScore();
+
+            /*
+             * หยุด YouTube
+             */
             if (
                 player &&
                 typeof player.stopVideo ===
@@ -1670,30 +2061,59 @@
             ) {
 
                 try {
+
                     player.stopVideo();
+
                 } catch (error) {}
+
             }
 
+            /*
+             * ซ่อน player
+             */
             document.getElementById(
                 "player-wrapper"
-            ).style.display = "none";
+            ).style.display =
+                "none";
 
+            /*
+             * แสดง Screen Server
+             */
             document.getElementById(
                 "empty-state"
-            ).style.display = "flex";
+            ).style.display =
+                "flex";
 
+            /*
+             * ซ่อน Now Playing
+             */
             document.getElementById(
                 "now-playing"
-            ).classList.add("hidden");
+            ).classList.add(
+                "hidden"
+            );
 
+            /*
+             * ซ่อน Queue
+             */
             document.getElementById(
                 "queue-box"
-            ).style.display = "none";
+            ).style.display =
+                "none";
 
+            /*
+             * เริ่ม Background
+             */
             startBgRotation();
 
+            /*
+             * แสดง UI
+             */
             showUI();
 
+            /*
+             * อัปเดตจำนวนคิว
+             */
             updateQueueUI();
         }
 
@@ -1707,36 +2127,48 @@
                 new YT.Player(
                     "player",
                     {
-                        width: "100%",
-                        height: "100%",
 
-                        videoId: "",
+                        width:
+                            "100%",
+
+                        height:
+                            "100%",
+
+                        videoId:
+                            "",
 
                         playerVars: {
 
-                            autoplay: 0,
+                            autoplay:
+                                0,
 
-                            controls: 0,
+                            controls:
+                                0,
 
-                            disablekb: 1,
+                            disablekb:
+                                1,
 
-                            fs: 0,
+                            fs:
+                                0,
 
-                            modestbranding: 1,
+                            modestbranding:
+                                1,
 
-                            rel: 0,
+                            rel:
+                                0,
 
-                            iv_load_policy: 3,
+                            iv_load_policy:
+                                3,
 
-                            /*
-                             * ขอให้ YouTube ไม่แสดง Caption
-                             */
-                            cc_load_policy: 0,
+                            cc_load_policy:
+                                0,
 
-                            playsinline: 1,
+                            playsinline:
+                                1,
 
                             origin:
                                 window.location.origin
+
                         },
 
                         events: {
@@ -1748,8 +2180,13 @@
                                 onPlayerStateChange,
 
                             onError:
-                                onPlayerError
+                                onPlayerError,
+
+                            onAutoplayBlocked:
+                                onAutoplayBlocked
+
                         }
+
                     }
                 );
         }
@@ -1760,15 +2197,19 @@
 
         function onPlayerReady() {
 
-            /*
-             * ปิด CC ทันทีที่ Player พร้อม
-             */
+            console.log(
+                "YouTube Player Ready"
+            );
 
             disableYouTubeCaptions();
 
-            if (isAppReady) {
+            if (
+                isAppReady
+            ) {
 
-                if (queue.length > 0) {
+                if (
+                    queue.length > 0
+                ) {
 
                     playCurrent();
 
@@ -1778,6 +2219,48 @@
 
                 }
             }
+        }
+
+        /* =========================================================
+           AUTOPLAY BLOCKED
+        ========================================================= */
+
+        function onAutoplayBlocked() {
+
+            console.warn(
+                "YouTube autoplay was blocked"
+            );
+
+            /*
+             * พยายามเล่นอีกครั้ง
+             * เนื่องจากผู้ใช้กด Start App แล้ว
+             */
+            setTimeout(
+                () => {
+
+                    try {
+
+                        if (
+                            player &&
+                            queue.length > 0
+                        ) {
+
+                            player.playVideo();
+
+                        }
+
+                    } catch (error) {
+
+                        console.error(
+                            "Autoplay retry:",
+                            error
+                        );
+
+                    }
+
+                },
+                500
+            );
         }
 
         /* =========================================================
@@ -1791,11 +2274,6 @@
             }
 
             try {
-
-                /*
-                 * cc_load_policy = 0
-                 * เป็นการขอไม่ให้ YouTube เปิด Caption
-                 */
 
                 if (
                     typeof player.unloadModule ===
@@ -1811,10 +2289,6 @@
                     } catch (error) {}
 
                 }
-
-                /*
-                 * พยายามเคลียร์ Caption track
-                 */
 
                 if (
                     typeof player.setOption ===
@@ -1839,6 +2313,7 @@
                     "Disable YouTube captions:",
                     error
                 );
+
             }
         }
 
@@ -1846,12 +2321,28 @@
            PLAYER STATE
         ========================================================= */
 
-        function onPlayerStateChange(event) {
+        function onPlayerStateChange(
+            event
+        ) {
 
+            if (
+                !window.YT ||
+                !YT.PlayerState
+            ) {
+                return;
+            }
+
+            /*
+             * PLAYING
+             */
             if (
                 event.data ===
                 YT.PlayerState.PLAYING
             ) {
+
+                console.log(
+                    "▶ YouTube PLAYING"
+                );
 
                 disableYouTubeCaptions();
 
@@ -1859,28 +2350,47 @@
 
                 startScoreWatcher();
 
-            } else if (
+                return;
+            }
+
+            /*
+             * PAUSED
+             */
+            if (
                 event.data ===
                 YT.PlayerState.PAUSED
             ) {
+
+                console.log(
+                    "⏸ YouTube PAUSED"
+                );
 
                 showUI();
 
                 stopScoreWatcher();
 
-            } else if (
+                return;
+            }
+
+            /*
+             * ENDED
+             *
+             * ตรงนี้คือจุดสำคัญของการแก้ปัญหา
+             */
+            if (
                 event.data ===
                 YT.PlayerState.ENDED
             ) {
 
+                console.log(
+                    "🏁 YouTube ENDED"
+                );
+
                 stopScoreWatcher();
 
-                if (!isEnding) {
+                finishCurrentSong();
 
-                    isEnding = true;
-
-                    showScoreThenNext();
-                }
+                return;
             }
         }
 
@@ -1888,7 +2398,9 @@
            PLAYER ERROR
         ========================================================= */
 
-        function onPlayerError(event) {
+        function onPlayerError(
+            event
+        ) {
 
             console.error(
                 "YouTube player error:",
@@ -1896,10 +2408,12 @@
             );
 
             /*
-             * 2 = invalid parameter
-             * 5 = HTML5 player error
-             * 100 = removed/not found
-             * 101/150 = embedding not allowed
+             * 2   = invalid parameter
+             * 5   = HTML5 player error
+             * 100 = removed / not found
+             * 101 = embedding disabled
+             * 150 = embedding disabled
+             * 153 = missing client identification
              */
 
             if (
@@ -1908,22 +2422,32 @@
                     5,
                     100,
                     101,
-                    150
-                ].includes(event.data)
+                    150,
+                    153
+                ].includes(
+                    event.data
+                )
             ) {
 
-                setTimeout(() => {
+                setTimeout(
+                    () => {
 
-                    if (
-                        queue.length > 0 &&
-                        !isEnding
-                    ) {
+                        if (
+                            queue.length > 0 &&
+                            !isTransitioning
+                        ) {
 
-                        skipSong();
+                            console.warn(
+                                "Skip broken video"
+                            );
 
-                    }
+                            skipSong();
 
-                }, 2500);
+                        }
+
+                    },
+                    2500
+                );
             }
         }
 
@@ -1931,56 +2455,71 @@
            SCORE WATCHER
         ========================================================= */
 
-        let scoreWatcher = null;
-
         function startScoreWatcher() {
 
             stopScoreWatcher();
 
             scoreWatcher =
-                setInterval(() => {
-
-                    if (
-                        !player ||
-                        typeof player.getCurrentTime !==
-                            "function" ||
-                        typeof player.getDuration !==
-                            "function"
-                    ) {
-                        return;
-                    }
-
-                    try {
-
-                        const current =
-                            player.getCurrentTime();
-
-                        const duration =
-                            player.getDuration();
+                setInterval(
+                    () => {
 
                         if (
-                            duration > 0 &&
-                            duration - current <= 5 &&
-                            duration - current > 0
+                            !player ||
+                            typeof player.getCurrentTime !==
+                                "function" ||
+                            typeof player.getDuration !==
+                                "function"
                         ) {
-
-                            showScore();
-
+                            return;
                         }
 
-                    } catch (error) {}
-                }, 1000);
+                        try {
+
+                            const current =
+                                player.getCurrentTime();
+
+                            const duration =
+                                player.getDuration();
+
+                            /*
+                             * แสดงคะแนนในช่วง 5 วินาทีท้าย
+                             *
+                             * แต่จะไม่เปลี่ยนเพลงจากตรงนี้
+                             *
+                             * การเปลี่ยนเพลงจะทำจาก
+                             * ENDED เท่านั้น
+                             */
+                            if (
+                                duration > 0 &&
+                                duration -
+                                    current <= 5 &&
+                                duration -
+                                    current > 0
+                            ) {
+
+                                showScore();
+
+                            }
+
+                        } catch (error) {}
+
+                    },
+                    1000
+                );
         }
 
         function stopScoreWatcher() {
 
-            if (scoreWatcher) {
+            if (
+                scoreWatcher
+            ) {
 
                 clearInterval(
                     scoreWatcher
                 );
 
-                scoreWatcher = null;
+                scoreWatcher =
+                    null;
             }
         }
 
@@ -2000,6 +2539,7 @@
                     "show"
                 )
             ) {
+
                 return;
             }
 
@@ -2010,11 +2550,17 @@
                 );
 
             const messages = [
+
                 "สุดยอด! 🔥",
+
                 "นักร้องตัวจริง! 🎤",
+
                 "พลังเสียงเป๊ะมาก! 💥",
+
                 "ระดับมืออาชีพ! ⭐",
+
                 "คืนนี้มีดาว! 🌟"
+
             ];
 
             document.getElementById(
@@ -2032,27 +2578,21 @@
                     )
                 ];
 
-            overlay.classList.add("show");
+            overlay.classList.add(
+                "show"
+            );
 
-            clearTimeout(scoreTimer);
-
-            scoreTimer =
-                setTimeout(() => {
-
-                    hideScore();
-
-                    if (
-                        queue.length > 0 &&
-                        !isEnding
-                    ) {
-
-                        isEnding = true;
-
-                        skipSong();
-
-                    }
-
-                }, 5000);
+            /*
+             * สำคัญ:
+             *
+             * ไม่มีการ skip เพลงจาก timer นี้แล้ว
+             *
+             * เพราะการเปลี่ยนเพลงต้องเกิดจาก
+             * ENDED เท่านั้น
+             */
+            clearTimeout(
+                scoreTimer
+            );
         }
 
         function hideScore() {
@@ -2066,12 +2606,9 @@
                 "show"
             );
 
-            clearTimeout(scoreTimer);
-        }
-
-        function showScoreThenNext() {
-
-            showScore();
+            clearTimeout(
+                scoreTimer
+            );
         }
 
         /* =========================================================
@@ -2080,60 +2617,86 @@
 
         function scheduleHideUI() {
 
-            clearTimeout(uiTimer);
+            clearTimeout(
+                uiTimer
+            );
 
             uiTimer =
-                setTimeout(() => {
+                setTimeout(
+                    () => {
 
-                    hideUI();
+                        hideUI();
 
-                }, 15000);
+                    },
+                    15000
+                );
         }
 
         function hideUI() {
 
             document.getElementById(
                 "top-bar"
-            ).classList.add("hidden");
+            ).classList.add(
+                "hidden"
+            );
 
             document.getElementById(
                 "now-playing"
-            ).classList.add("hidden");
+            ).classList.add(
+                "hidden"
+            );
 
             document.getElementById(
                 "queue-box"
-            ).classList.add("hidden");
+            ).classList.add(
+                "hidden"
+            );
 
             document.getElementById(
                 "qr-panel"
-            ).classList.add("hidden");
+            ).classList.add(
+                "hidden"
+            );
         }
 
         function showUI() {
 
-            clearTimeout(uiTimer);
+            clearTimeout(
+                uiTimer
+            );
 
             document.getElementById(
                 "top-bar"
-            ).classList.remove("hidden");
+            ).classList.remove(
+                "hidden"
+            );
 
             document.getElementById(
                 "now-playing"
-            ).classList.remove("hidden");
+            ).classList.remove(
+                "hidden"
+            );
 
             document.getElementById(
                 "queue-box"
-            ).classList.remove("hidden");
+            ).classList.remove(
+                "hidden"
+            );
 
             document.getElementById(
                 "qr-panel"
-            ).classList.remove("hidden");
+            ).classList.remove(
+                "hidden"
+            );
 
-            if (queue.length === 0) {
+            if (
+                queue.length === 0
+            ) {
 
                 document.getElementById(
                     "queue-box"
-                ).style.display = "none";
+                ).style.display =
+                    "none";
             }
         }
 
@@ -2145,9 +2708,14 @@
             "mousemove",
             () => {
 
-                if (isAppReady) {
+                if (
+                    isAppReady
+                ) {
+
                     showUI();
+
                     scheduleHideUI();
+
                 }
 
             }
@@ -2157,9 +2725,14 @@
             "touchstart",
             () => {
 
-                if (isAppReady) {
+                if (
+                    isAppReady
+                ) {
+
                     showUI();
+
                     scheduleHideUI();
+
                 }
 
             },
@@ -2172,22 +2745,34 @@
            BACKGROUND
         ========================================================= */
 
-        function setBackground(url) {
+        function setBackground(
+            url
+        ) {
 
             const next =
                 activeBg === 1
-                    ? document.getElementById("bg2")
-                    : document.getElementById("bg1");
+                    ? document.getElementById(
+                        "bg2"
+                    )
+                    : document.getElementById(
+                        "bg1"
+                    );
 
             const current =
                 activeBg === 1
-                    ? document.getElementById("bg1")
-                    : document.getElementById("bg2");
+                    ? document.getElementById(
+                        "bg1"
+                    )
+                    : document.getElementById(
+                        "bg2"
+                    );
 
             next.style.backgroundImage =
                 `url("${url}")`;
 
-            next.classList.add("active");
+            next.classList.add(
+                "active"
+            );
 
             current.classList.remove(
                 "active"
@@ -2209,17 +2794,23 @@
             }
 
             setBackground(
-                backgrounds[bgIndex]
+                backgrounds[
+                    bgIndex
+                ]
             );
 
             bgIndex =
-                (bgIndex + 1) %
+                (
+                    bgIndex + 1
+                ) %
                 backgrounds.length;
         }
 
         function startBgRotation() {
 
-            if (bgTimer) {
+            if (
+                bgTimer
+            ) {
                 return;
             }
 
@@ -2234,13 +2825,16 @@
 
         function stopBgRotation() {
 
-            if (bgTimer) {
+            if (
+                bgTimer
+            ) {
 
                 clearInterval(
                     bgTimer
                 );
 
-                bgTimer = null;
+                bgTimer =
+                    null;
             }
         }
 
@@ -2250,15 +2844,19 @@
 
         function initApp() {
 
-            if (isAppReady) {
+            if (
+                isAppReady
+            ) {
                 return;
             }
 
-            isAppReady = true;
+            isAppReady =
+                true;
 
             document.getElementById(
                 "start-overlay"
-            ).style.display = "none";
+            ).style.display =
+                "none";
 
             initRoom();
 
@@ -2266,9 +2864,13 @@
 
             startBgRotation();
 
-            if (player) {
+            if (
+                player
+            ) {
 
-                if (queue.length > 0) {
+                if (
+                    queue.length > 0
+                ) {
 
                     playCurrent();
 
@@ -2287,17 +2889,16 @@
         updateQueueUI();
 
         /*
-         * เตรียม background แรก
+         * เตรียม Background แรก
          */
-
         document.getElementById(
             "bg1"
         ).style.backgroundImage =
             `url("${backgrounds[0]}")`;
 
-        /*
-         * ถ้าผู้ใช้กด Enter / Space บน TV
-         */
+        /* =========================================================
+           KEYBOARD
+        ========================================================= */
 
         document.addEventListener(
             "keydown",
@@ -2314,6 +2915,7 @@
                 ) {
 
                     initApp();
+
                 }
 
                 if (
@@ -2323,9 +2925,12 @@
                 ) {
 
                     showUI();
+
                 }
+
             }
         );
+
     </script>
 
 </body>
