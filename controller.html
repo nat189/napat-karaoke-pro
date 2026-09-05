@@ -1,1798 +1,2005 @@
-<!DOCTYPE html><html lang="th">
+<!DOCTYPE html>
+<html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Napat Karaoke Pro - TV</title><script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><style>
-* {
-    box-sizing: border-box;
-}
+    <meta charset="UTF-8">
 
-html,
-body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: #000;
-    color: #fff;
-    font-family: Arial, Helvetica, sans-serif;
-}
+    <meta
+        name="viewport"
+        content="width=device-width,
+                 initial-scale=1.0,
+                 maximum-scale=1.0,
+                 user-scalable=no"
+    >
 
-#app {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    background: #000;
-}
+    <meta name="theme-color" content="#08080a">
 
-/* =========================
-   BACKGROUND
-========================= */
+    <title>Napat Karaoke Pro - Controller</title>
 
-#background {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    overflow: hidden;
-    background: #000;
-}
+    <!-- PeerJS -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
-.bg-layer {
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    background-position: center;
-    opacity: 0;
-    transition: opacity 1.2s ease;
-}
+    <style>
 
-.bg-layer.active {
-    opacity: 1;
-}
+        :root {
+            --red: #ff2d55;
+            --pink: #ff375f;
+            --green: #32d74b;
+            --blue: #0a84ff;
+            --orange: #ff9f0a;
+            --purple: #bf5af2;
 
-#background::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-        linear-gradient(
-            to bottom,
-            rgba(0,0,0,.30),
-            rgba(0,0,0,.15) 45%,
-            rgba(0,0,0,.60)
+            --dark: #070709;
+            --card: #151518;
+            --card2: #1c1c20;
+
+            --border: rgba(255,255,255,.09);
+            --muted: #8e8e93;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            background: var(--dark);
+            color: white;
+
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                Arial,
+                sans-serif;
+        }
+
+        body {
+            padding-bottom: 35px;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        /* =====================================================
+           APP
+        ===================================================== */
+
+        .app {
+            width: min(620px, 100%);
+            margin: auto;
+            padding: 14px;
+        }
+
+        /* =====================================================
+           HEADER
+        ===================================================== */
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            padding: 14px 4px 18px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .brand-icon {
+            width: 44px;
+            height: 44px;
+
+            display: grid;
+            place-items: center;
+
+            border-radius: 14px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--red),
+                    #ff7048
+                );
+
+            font-size: 22px;
+
+            box-shadow:
+                0 8px 25px
+                rgba(255,45,85,.28);
+        }
+
+        .brand-title {
+            font-size: 17px;
+            font-weight: 900;
+        }
+
+        .brand-sub {
+            margin-top: 2px;
+
+            color: var(--muted);
+
+            font-size: 11px;
+        }
+
+        /* =====================================================
+           CONNECTION
+        ===================================================== */
+
+        .connection {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+
+            padding: 8px 11px;
+
+            border-radius: 20px;
+
+            background: rgba(255,255,255,.05);
+
+            border: 1px solid var(--border);
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+
+            border-radius: 50%;
+
+            background: var(--orange);
+        }
+
+        .connection.online {
+            color: var(--green);
+        }
+
+        .connection.online
+        .connection-dot {
+            background: var(--green);
+
+            box-shadow:
+                0 0 10px
+                rgba(50,215,75,.8);
+        }
+
+        /* =====================================================
+           ROOM
+        ===================================================== */
+
+        .room-card {
+            padding: 14px 16px;
+
+            margin-bottom: 12px;
+
+            border-radius: 18px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(255,45,85,.10),
+                    rgba(191,90,242,.07)
+                );
+
+            border: 1px solid var(--border);
+        }
+
+        .room-label {
+            color: var(--muted);
+
+            font-size: 10px;
+            font-weight: 700;
+
+            letter-spacing: 1px;
+        }
+
+        .room-code {
+            margin-top: 3px;
+
+            font-size: 19px;
+            font-weight: 900;
+
+            letter-spacing: 1px;
+        }
+
+        .room-hint {
+            margin-top: 3px;
+
+            color: #777;
+
+            font-size: 11px;
+        }
+
+        /* =====================================================
+           MAIN CONTROLS
+        ===================================================== */
+
+        .main-controls {
+            display: grid;
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap: 9px;
+
+            margin-bottom: 14px;
+        }
+
+        .control-btn {
+            border: 0;
+
+            border-radius: 16px;
+
+            min-height: 54px;
+
+            color: white;
+
+            font-weight: 900;
+
+            font-size: 14px;
+
+            transition:
+                transform .12s ease,
+                opacity .12s ease;
+        }
+
+        .control-btn:active {
+            transform: scale(.97);
+            opacity: .82;
+        }
+
+        .btn-skip {
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--red),
+                    #ff7048
+                );
+
+            box-shadow:
+                0 8px 25px
+                rgba(255,45,85,.2);
+        }
+
+        .btn-pause {
+            background:
+                linear-gradient(
+                    135deg,
+                    #5856d6,
+                    #8b5cf6
+                );
+        }
+
+        /* =====================================================
+           SEARCH
+        ===================================================== */
+
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            margin: 18px 3px 9px;
+
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        .section-count {
+            color: var(--green);
+
+            font-size: 11px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 8px;
+        }
+
+        #search-input {
+            min-width: 0;
+            flex: 1;
+
+            padding: 14px 15px;
+
+            border-radius: 14px;
+
+            border: 1px solid #29292e;
+
+            outline: none;
+
+            background: #141416;
+
+            color: white;
+
+            font-size: 14px;
+        }
+
+        #search-input::placeholder {
+            color: #666;
+        }
+
+        #search-input:focus {
+            border-color:
+                rgba(10,132,255,.7);
+
+            box-shadow:
+                0 0 0 3px
+                rgba(10,132,255,.08);
+        }
+
+        .btn-search {
+            width: 78px;
+
+            border: 0;
+
+            border-radius: 14px;
+
+            background: var(--blue);
+
+            color: white;
+
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        /* =====================================================
+           SEARCH RESULTS
+        ===================================================== */
+
+        #results {
+            margin-top: 10px;
+        }
+
+        .result-item {
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+            padding: 10px;
+
+            margin-bottom: 8px;
+
+            border-radius: 16px;
+
+            background: var(--card);
+
+            border: 1px solid var(--border);
+        }
+
+        .result-thumb {
+            width: 78px;
+            height: 52px;
+
+            flex-shrink: 0;
+
+            object-fit: cover;
+
+            border-radius: 9px;
+
+            background: #000;
+        }
+
+        .result-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .result-title {
+            overflow: hidden;
+
+            display: -webkit-box;
+
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+
+            font-size: 12px;
+            font-weight: 700;
+
+            line-height: 1.35;
+        }
+
+        .result-meta {
+            margin-top: 4px;
+
+            overflow: hidden;
+
+            white-space: nowrap;
+
+            text-overflow: ellipsis;
+
+            color: #777;
+
+            font-size: 10px;
+        }
+
+        .btn-add {
+            flex-shrink: 0;
+
+            border: 0;
+
+            padding: 9px 12px;
+
+            border-radius: 11px;
+
+            background: var(--red);
+
+            color: white;
+
+            font-size: 11px;
+
+            font-weight: 900;
+        }
+
+        .btn-add:active {
+            transform: scale(.94);
+        }
+
+        .loading {
+            padding: 25px 10px;
+
+            text-align: center;
+
+            color: #777;
+
+            font-size: 13px;
+        }
+
+        .error {
+            padding: 20px;
+
+            text-align: center;
+
+            color: var(--red);
+
+            font-size: 13px;
+        }
+
+        /* =====================================================
+           QUEUE
+        ===================================================== */
+
+        .queue-card {
+            overflow: hidden;
+
+            border-radius: 18px;
+
+            background: var(--card);
+
+            border: 1px solid var(--border);
+        }
+
+        #queue-list {
+            padding: 7px;
+        }
+
+        .queue-empty {
+            padding: 28px 10px;
+
+            text-align: center;
+
+            color: #666;
+
+            font-size: 13px;
+        }
+
+        .queue-item {
+            position: relative;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+
+            padding: 11px;
+
+            margin-bottom: 6px;
+
+            border-radius: 14px;
+
+            background:
+                rgba(255,255,255,.035);
+
+            border: 1px solid
+                rgba(255,255,255,.05);
+
+            user-select: none;
+        }
+
+        .queue-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .queue-item.playing {
+            background:
+                rgba(50,215,75,.09);
+
+            border-color:
+                rgba(50,215,75,.28);
+        }
+
+        .queue-number {
+            width: 32px;
+            height: 32px;
+
+            flex-shrink: 0;
+
+            display: grid;
+            place-items: center;
+
+            border-radius: 10px;
+
+            background: #29292d;
+
+            color: #aaa;
+
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .playing .queue-number {
+            background: var(--green);
+            color: #000;
+        }
+
+        .queue-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .queue-status {
+            margin-bottom: 3px;
+
+            color: var(--green);
+
+            font-size: 9px;
+            font-weight: 900;
+        }
+
+        .queue-title {
+            overflow: hidden;
+
+            white-space: nowrap;
+
+            text-overflow: ellipsis;
+
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .queue-channel {
+            margin-top: 3px;
+
+            overflow: hidden;
+
+            white-space: nowrap;
+
+            text-overflow: ellipsis;
+
+            color: #666;
+
+            font-size: 9px;
+        }
+
+        .queue-actions {
+            display: flex;
+
+            align-items: center;
+
+            gap: 5px;
+        }
+
+        .queue-btn {
+            width: 35px;
+            height: 35px;
+
+            display: grid;
+            place-items: center;
+
+            padding: 0;
+
+            border: 0;
+
+            border-radius: 9px;
+
+            background: #29292d;
+
+            color: white;
+
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .queue-btn:active {
+            transform: scale(.92);
+        }
+
+        .queue-btn.orange {
+            color: var(--orange);
+        }
+
+        .queue-btn.red {
+            color: var(--red);
+        }
+
+        .queue-btn.retry {
+            width: auto;
+
+            padding: 0 9px;
+
+            color: #000;
+
+            background: white;
+
+            font-size: 10px;
+        }
+
+        /* =====================================================
+           TOAST
+        ===================================================== */
+
+        #toast {
+            position: fixed;
+
+            left: 50%;
+
+            bottom: 22px;
+
+            z-index: 999;
+
+            transform:
+                translate(-50%, 20px);
+
+            opacity: 0;
+
+            pointer-events: none;
+
+            padding: 11px 16px;
+
+            border-radius: 30px;
+
+            background:
+                rgba(25,25,28,.94);
+
+            border:
+                1px solid
+                rgba(255,255,255,.12);
+
+            box-shadow:
+                0 10px 35px
+                rgba(0,0,0,.45);
+
+            color: white;
+
+            font-size: 12px;
+            font-weight: 700;
+
+            transition:
+                opacity .25s ease,
+                transform .25s ease;
+
+            white-space: nowrap;
+        }
+
+        #toast.show {
+            opacity: 1;
+
+            transform:
+                translate(-50%, 0);
+        }
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @media (max-width: 420px) {
+
+            .app {
+                padding: 11px;
+            }
+
+            .brand-title {
+                font-size: 15px;
+            }
+
+            .result-thumb {
+                width: 70px;
+                height: 48px;
+            }
+
+            .btn-add {
+                padding: 8px 10px;
+            }
+
+            .queue-btn {
+                width: 32px;
+                height: 32px;
+            }
+
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- HEADER -->
+    <header class="header">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                🎤
+            </div>
+
+            <div>
+
+                <div class="brand-title">
+                    Napat Karaoke Pro
+                </div>
+
+                <div class="brand-sub">
+                    Mobile Controller
+                </div>
+
+            </div>
+
+        </div>
+
+        <div
+            id="connection"
+            class="connection"
+        >
+
+            <span
+                class="connection-dot"
+            ></span>
+
+            <span id="connection-text">
+                กำลังเชื่อมต่อ
+            </span>
+
+        </div>
+
+    </header>
+
+
+    <!-- ROOM -->
+    <div class="room-card">
+
+        <div class="room-label">
+            KARAOKE ROOM
+        </div>
+
+        <div
+            id="room-code"
+            class="room-code"
+        >
+            ----
+        </div>
+
+        <div class="room-hint">
+            เชื่อมต่อกับ TV เพื่อควบคุมคิวเพลง
+        </div>
+
+    </div>
+
+
+    <!-- CONTROLS -->
+    <div class="main-controls">
+
+        <button
+            class="control-btn btn-skip"
+            onclick="sendAction('SKIP')"
+        >
+            ⏭️ ข้ามเพลง
+        </button>
+
+        <button
+            id="pause-btn"
+            class="control-btn btn-pause"
+            onclick="togglePlay()"
+        >
+            ⏸️ หยุดชั่วคราว
+        </button>
+
+    </div>
+
+
+    <!-- SEARCH -->
+    <div class="section-title">
+
+        <span>
+            🔎 ค้นหาเพลง
+        </span>
+
+        <span
+            id="result-count"
+            class="section-count"
+        ></span>
+
+    </div>
+
+    <div class="search-box">
+
+        <input
+            id="search-input"
+            type="text"
+            autocomplete="off"
+            placeholder="พิมพ์ชื่อเพลง / ศิลปิน..."
+        >
+
+        <button
+            class="btn-search"
+            onclick="searchMusic()"
+        >
+            ค้นหา
+        </button>
+
+    </div>
+
+    <div id="results"></div>
+
+
+    <!-- QUEUE -->
+    <div class="section-title">
+
+        <span>
+            🎶 คิวเพลง
+        </span>
+
+        <span
+            id="queue-count"
+            class="section-count"
+        >
+            0 เพลง
+        </span>
+
+    </div>
+
+    <div class="queue-card">
+
+        <div id="queue-list">
+
+            <div class="queue-empty">
+                ยังไม่มีเพลงในคิว
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div id="toast"></div>
+
+
+<script>
+
+    /* =========================================================
+       STATE
+    ========================================================= */
+
+    let peer = null;
+
+    let conn = null;
+
+    let roomId = "";
+
+    let currentQueue = [];
+
+    let isPaused = false;
+
+    let reconnectTimer = null;
+
+    let toastTimer = null;
+
+
+    /* =========================================================
+       ROOM
+    ========================================================= */
+
+    function getRoom() {
+
+        const params =
+            new URLSearchParams(
+                window.location.search
+            );
+
+        const urlRoom =
+            params.get("room") ||
+            params.get("r");
+
+        const savedRoom =
+            localStorage.getItem(
+                "last_room"
+            );
+
+        roomId =
+            (
+                urlRoom ||
+                savedRoom ||
+                ""
+            ).toLowerCase().trim();
+
+        if (roomId) {
+
+            localStorage.setItem(
+                "last_room",
+                roomId
+            );
+
+        }
+
+        document.getElementById(
+            "room-code"
+        ).innerText =
+            roomId || "ไม่พบ Room";
+
+    }
+
+
+    /* =========================================================
+       PEERJS
+    ========================================================= */
+
+    function initPeer() {
+
+        if (!roomId) {
+
+            setConnection(
+                "ไม่พบ Room",
+                false
+            );
+
+            return;
+
+        }
+
+        setConnection(
+            "กำลังเชื่อมต่อ",
+            false
         );
-}
-
-/* =========================
-   PLAYER
-========================= */
-
-#player-wrapper {
-    position: absolute;
-    inset: 0;
-    z-index: 5;
-    display: none;
-    background: #000;
-}
-
-#player {
-    width: 100%;
-    height: 100%;
-}
-
-#player iframe {
-    width: 100% !important;
-    height: 100% !important;
-}
-
-/* =========================
-   TOP BAR
-========================= */
-
-#top-bar {
-    position: absolute;
-    top: 22px;
-    left: 30px;
-    right: 30px;
-    z-index: 20;
-
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-
-    pointer-events: none;
-}
-
-#brand {
-    padding: 10px 18px;
-    border-radius: 14px;
-    background: rgba(0,0,0,.55);
-    backdrop-filter: blur(8px);
-    font-size: 22px;
-    font-weight: bold;
-}
-
-#room-info {
-    padding: 10px 18px;
-    border-radius: 14px;
-    background: rgba(0,0,0,.55);
-    backdrop-filter: blur(8px);
-    font-size: 18px;
-}
-
-/* =========================
-   NOW PLAYING
-========================= */
-
-#now-playing {
-    position: absolute;
-    top: 90px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-15px);
-
-    z-index: 30;
-
-    min-width: 420px;
-    max-width: 80vw;
-
-    padding: 14px 28px;
-
-    border-radius: 18px;
-
-    background: rgba(0,0,0,.72);
-    border: 1px solid rgba(255,255,255,.18);
-
-    text-align: center;
-
-    opacity: 0;
-    visibility: hidden;
-
-    transition:
-        opacity .35s ease,
-        transform .35s ease,
-        visibility .35s ease;
-
-    pointer-events: none;
-}
-
-#now-playing.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0);
-}
-
-#now-playing .label {
-    font-size: 16px;
-    font-weight: bold;
-    opacity: .75;
-    margin-bottom: 5px;
-}
-
-#now-title {
-    font-size: 28px;
-    font-weight: bold;
-    line-height: 1.25;
-}
-
-/* =========================
-   QUEUE
-========================= */
-
-#queue-box {
-    position: absolute;
-    right: 30px;
-    bottom: 30px;
-
-    z-index: 25;
-
-    width: 360px;
-    max-height: 55vh;
-
-    padding: 18px;
-
-    border-radius: 18px;
-
-    background: rgba(0,0,0,.72);
-    backdrop-filter: blur(10px);
-
-    opacity: 0;
-    visibility: hidden;
-
-    transition: opacity .35s ease;
-}
-
-#queue-box.show {
-    opacity: 1;
-    visibility: visible;
-}
-
-#queue-title {
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 12px;
-}
-
-.queue-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
-    padding: 9px 0;
-
-    border-bottom: 1px solid rgba(255,255,255,.12);
-}
-
-.queue-item:last-child {
-    border-bottom: none;
-}
-
-.queue-number {
-    width: 28px;
-    text-align: center;
-    font-weight: bold;
-}
-
-.queue-name {
-    flex: 1;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-.queue-current {
-    color: #00ff99;
-}
-
-/* =========================
-   QR
-========================= */
-
-#qr-box {
-    position: absolute;
-    left: 30px;
-    bottom: 30px;
-
-    z-index: 25;
-
-    width: 210px;
-
-    padding: 14px;
-
-    border-radius: 18px;
-
-    background: rgba(255,255,255,.95);
-
-    color: #111;
-
-    text-align: center;
-
-    box-shadow: 0 10px 40px rgba(0,0,0,.4);
-}
-
-#qrcode {
-    width: 180px;
-    height: 180px;
-    margin: auto;
-}
-
-#qrcode img,
-#qrcode canvas {
-    width: 180px !important;
-    height: 180px !important;
-}
-
-#qr-label {
-    margin-top: 9px;
-    font-size: 15px;
-    font-weight: bold;
-}
-
-#qr-url {
-    margin-top: 4px;
-    font-size: 10px;
-    word-break: break-all;
-    opacity: .65;
-}
-
-/* =========================
-   IDLE
-========================= */
-
-#empty-state {
-    position: absolute;
-    inset: 0;
-
-    z-index: 10;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    text-align: center;
-
-    pointer-events: none;
-}
-
-#empty-state-inner {
-    margin-top: -20px;
-}
-
-#empty-state .main {
-    font-size: 48px;
-    font-weight: bold;
-    text-shadow: 0 5px 25px rgba(0,0,0,.8);
-}
-
-#empty-state .sub {
-    margin-top: 12px;
-    font-size: 22px;
-    opacity: .85;
-}
-
-/* =========================
-   SCORE
-========================= */
-
-#score-overlay {
-    position: absolute;
-    inset: 0;
-
-    z-index: 100;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    background: rgba(0,0,0,.38);
-
-    opacity: 0;
-    visibility: hidden;
-
-    transition: opacity .35s ease;
-}
-
-#score-overlay.show {
-    opacity: 1;
-    visibility: visible;
-}
-
-#score-card {
-    min-width: 420px;
-    padding: 35px 50px;
-
-    border-radius: 30px;
-
-    background: rgba(0,0,0,.78);
-    backdrop-filter: blur(12px);
-
-    text-align: center;
-
-    box-shadow: 0 20px 80px rgba(0,0,0,.6);
-}
-
-#score-label {
-    font-size: 25px;
-    font-weight: bold;
-    margin-bottom: 10px;
-}
-
-#score-number {
-    font-size: 100px;
-    line-height: 1;
-    font-weight: 900;
-}
-
-#score-message {
-    margin-top: 12px;
-    font-size: 24px;
-}
-
-/* =========================
-   START OVERLAY
-========================= */
-
-#start-overlay {
-    position: absolute;
-    inset: 0;
-
-    z-index: 200;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    background: rgba(0,0,0,.72);
-}
-
-#start-button {
-    padding: 20px 42px;
-
-    border: none;
-    border-radius: 18px;
-
-    background: #fff;
-    color: #111;
-
-    font-size: 28px;
-    font-weight: bold;
-
-    cursor: pointer;
-}
-
-#start-button:hover {
-    transform: scale(1.03);
-}
-
-/* =========================
-   MOBILE / SMALL SCREEN
-========================= */
-
-@media (max-width: 900px) {
-    #queue-box {
-        width: 300px;
-        right: 15px;
-        bottom: 15px;
-    }
-
-    #qr-box {
-        left: 15px;
-        bottom: 15px;
-        transform: scale(.85);
-        transform-origin: bottom left;
-    }
-
-    #now-playing {
-        min-width: 300px;
-        max-width: 85vw;
-    }
-
-    #now-title {
-        font-size: 22px;
-    }
-
-    #score-card {
-        min-width: 320px;
-    }
-}
-</style></head><body><div id="app"><!-- BACKGROUND -->
-<div id="background">
-    <div id="bg1" class="bg-layer active"></div>
-    <div id="bg2" class="bg-layer"></div>
-</div>
-
-<!-- YOUTUBE PLAYER -->
-<div id="player-wrapper">
-    <div id="player"></div>
-</div>
-
-<!-- TOP BAR -->
-<div id="top-bar">
-
-    <div id="brand">
-        🎤 Napat Karaoke Pro
-    </div>
-
-    <div id="room-info">
-        ROOM: <span id="room-id">กำลังสร้าง...</span>
-    </div>
-
-</div>
-
-<!-- NOW PLAYING -->
-<div id="now-playing">
-
-    <div class="label">
-        NOW PLAYING
-    </div>
-
-    <div id="now-title">
-        กำลังเล่นเพลง
-    </div>
-
-</div>
-
-<!-- QUEUE -->
-<div id="queue-box">
-
-    <div id="queue-title">
-        🎵 คิวเพลง
-    </div>
-
-    <div id="queue-list"></div>
-
-</div>
-
-<!-- QR CODE -->
-<div id="qr-box">
-
-    <div id="qrcode"></div>
-
-    <div id="qr-label">
-        📱 สแกนเพื่อควบคุม / จองเพลง
-    </div>
-
-    <div id="qr-url"></div>
-
-</div>
-
-<!-- EMPTY / IDLE -->
-<div id="empty-state">
-
-    <div id="empty-state-inner">
-
-        <div class="main">
-            🎤 พร้อมร้องแล้วหรือยัง?
-        </div>
-
-        <div class="sub">
-            สแกน QR Code เพื่อเลือกเพลง
-        </div>
-
-    </div>
-
-</div>
-
-<!-- SCORE -->
-<div id="score-overlay">
-
-    <div id="score-card">
-
-        <div id="score-label">
-            🎤 คะแนนเพลง
-        </div>
-
-        <div id="score-number">
-            0
-        </div>
-
-        <div id="score-message">
-            เยี่ยมมาก!
-        </div>
-
-    </div>
-
-</div>
-
-<!-- START -->
-<div id="start-overlay">
-
-    <button id="start-button">
-        ▶ เริ่มระบบ Karaoke
-    </button>
-
-</div>
-
-</div><script>
-"use strict";
-
-/* =========================================================
-   STATE
-========================================================= */
-
-let peer = null;
-let connObj = null;
-
-let currentRoom = "";
-
-let queue = [];
-
-let player = null;
-
-let isAppReady = false;
-
-let transitionLock = false;
-
-let uiTimer = null;
-let scoreTimer = null;
-let bgTimer = null;
-
-let bgIndex = 0;
-let activeBg = 1;
-
-let scoreWatcher = null;
-
-
-/* =========================================================
-   DOM
-========================================================= */
-
-const roomIdEl = document.getElementById("room-id");
-
-const playerWrapper = document.getElementById("player-wrapper");
-
-const nowPlaying = document.getElementById("now-playing");
-const nowTitle = document.getElementById("now-title");
-
-const queueBox = document.getElementById("queue-box");
-const queueList = document.getElementById("queue-list");
-
-const emptyState = document.getElementById("empty-state");
-
-const scoreOverlay = document.getElementById("score-overlay");
-const scoreNumber = document.getElementById("score-number");
-const scoreMessage = document.getElementById("score-message");
-
-const startOverlay = document.getElementById("start-overlay");
-const startButton = document.getElementById("start-button");
-
-const qrcodeEl = document.getElementById("qrcode");
-const qrUrlEl = document.getElementById("qr-url");
-
-const bg1 = document.getElementById("bg1");
-const bg2 = document.getElementById("bg2");
-
-
-/* =========================================================
-   BACKGROUNDS
-========================================================= */
-
-const backgrounds = [
-    "https://picsum.photos/id/1011/1920/1080",
-    "https://picsum.photos/id/1015/1920/1080",
-    "https://picsum.photos/id/1016/1920/1080",
-    "https://picsum.photos/id/1025/1920/1080",
-    "https://picsum.photos/id/1039/1920/1080"
-];
-
-
-function startBackgroundRotation() {
-
-    clearInterval(bgTimer);
-
-    bgIndex = 0;
-
-    bg1.style.backgroundImage =
-        `url("${backgrounds[0]}")`;
-
-    bg2.style.backgroundImage =
-        `url("${backgrounds[1]}")`;
-
-    bg1.classList.add("active");
-    bg2.classList.remove("active");
-
-    activeBg = 1;
-
-    bgTimer = setInterval(() => {
-
-        bgIndex++;
-
-        if (bgIndex >= backgrounds.length) {
-            bgIndex = 0;
-        }
-
-        const nextIndex =
-            (bgIndex + 1) % backgrounds.length;
-
-        if (activeBg === 1) {
-
-            bg2.style.backgroundImage =
-                `url("${backgrounds[bgIndex]}")`;
-
-            bg2.classList.add("active");
-            bg1.classList.remove("active");
-
-            activeBg = 2;
-
-        } else {
-
-            bg1.style.backgroundImage =
-                `url("${backgrounds[bgIndex]}")`;
-
-            bg1.classList.add("active");
-            bg2.classList.remove("active");
-
-            activeBg = 1;
-        }
-
-    }, 10000);
-}
-
-
-/* =========================================================
-   UI
-========================================================= */
-
-function showUI() {
-
-    if (queue.length > 0) {
-        queueBox.classList.add("show");
-    }
-}
-
-
-function hideUI() {
-    queueBox.classList.remove("show");
-}
-
-
-function hideNowPlaying() {
-
-    nowPlaying.classList.remove("show");
-}
-
-
-function showNowPlaying(title) {
-
-    clearTimeout(uiTimer);
-
-    nowTitle.textContent =
-        title || "กำลังเล่นเพลง";
-
-    nowPlaying.classList.add("show");
-
-    /*
-       NOW PLAYING แสดง 8 วินาที
-    */
-
-    uiTimer = setTimeout(() => {
-
-        hideNowPlaying();
-        hideUI();
-
-    }, 8000);
-}
-
-
-/* =========================================================
-   IDLE SCREEN
-========================================================= */
-
-function showIdleScreen() {
-
-    clearTimeout(uiTimer);
-    clearTimeout(scoreTimer);
-
-    stopScoreWatcher();
-
-    hideNowPlaying();
-    hideUI();
-
-    scoreOverlay.classList.remove("show");
-
-    playerWrapper.style.display = "none";
-
-    emptyState.style.display = "flex";
-
-    startBackgroundRotation();
-
-    if (player) {
 
         try {
-            player.stopVideo();
-        } catch (e) {
-            console.warn("stopVideo:", e);
-        }
-    }
-}
 
+            peer =
+                new Peer();
 
-/* =========================================================
-   QR CODE
-========================================================= */
-
-function createControllerQR() {
-
-    if (!currentRoom) {
-        console.warn("Cannot create QR: room is empty");
-        return;
-    }
-
-    /*
-       สำคัญ:
-       QR ต้องชี้ไป controller.html เท่านั้น
-       ไม่ใช้ location.href
-       ไม่ใช้ pathname ของ display.html
-    */
-
-    const controllerUrl =
-        `${window.location.origin}/controller.html?room=${encodeURIComponent(currentRoom)}`;
-
-    console.log("Controller QR URL:", controllerUrl);
-
-    qrcodeEl.innerHTML = "";
-
-    new QRCode(qrcodeEl, {
-        text: controllerUrl,
-        width: 180,
-        height: 180,
-        correctLevel: QRCode.CorrectLevel.M
-    });
-
-    qrUrlEl.textContent = controllerUrl;
-}
-
-
-/* =========================================================
-   ROOM
-========================================================= */
-
-function generateRoomId() {
-
-    return "room_" +
-        Math.random()
-            .toString(36)
-            .substring(2, 7)
-            .toUpperCase();
-}
-
-
-function initRoom() {
-
-    currentRoom =
-        sessionStorage.getItem("k_room");
-
-    if (!currentRoom) {
-
-        currentRoom =
-            generateRoomId();
-
-        sessionStorage.setItem(
-            "k_room",
-            currentRoom
-        );
-    }
-
-    roomIdEl.textContent =
-        currentRoom;
-
-    createControllerQR();
-
-    peer = new Peer(currentRoom);
-
-    peer.on("open", id => {
-
-        console.log(
-            "Peer opened:",
-            id
-        );
-
-        currentRoom = id;
-
-        sessionStorage.setItem(
-            "k_room",
-            id
-        );
-
-        roomIdEl.textContent = id;
-
-        createControllerQR();
-    });
-
-
-    peer.on("connection", conn => {
-
-        console.log(
-            "Controller connected:",
-            conn.peer
-        );
-
-        connObj = conn;
-
-        conn.on("open", () => {
-
-            console.log(
-                "Controller connection opened"
-            );
-
-            sendQueueUpdate();
-        });
-
-
-        conn.on("data", data => {
-
-            console.log(
-                "Controller command:",
-                data
-            );
-
-            handleCommand(data);
-        });
-
-
-        conn.on("close", () => {
-
-            console.log(
-                "Controller disconnected"
-            );
-
-            if (connObj === conn) {
-                connObj = null;
-            }
-        });
-
-
-        conn.on("error", err => {
+        } catch (error) {
 
             console.error(
-                "Connection error:",
-                err
+                error
             );
 
-            if (connObj === conn) {
-                connObj = null;
+            setConnection(
+                "PeerJS ผิดพลาด",
+                false
+            );
+
+            return;
+
+        }
+
+        peer.on(
+            "open",
+            () => {
+
+                console.log(
+                    "Controller Peer:",
+                    peer.id
+                );
+
+                connectToTV();
+
             }
-        });
-
-    });
-
-
-    peer.on("error", err => {
-
-        console.error(
-            "Peer error:",
-            err
         );
 
-        /*
-           หาก room ชนกัน ให้สร้าง room ใหม่
-        */
+        peer.on(
+            "error",
+            error => {
+
+                console.error(
+                    "PeerJS error:",
+                    error
+                );
+
+                setConnection(
+                    "เชื่อมต่อใหม่...",
+                    false
+                );
+
+                scheduleReconnect();
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       CONNECT TV
+    ========================================================= */
+
+    function connectToTV() {
 
         if (
-            err.type === "unavailable-id" ||
-            err.type === "peer-unavailable"
+            !peer ||
+            !roomId
         ) {
-
-            sessionStorage.removeItem(
-                "k_room"
-            );
-
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
-        }
-    });
-}
-
-
-/* =========================================================
-   QUEUE
-========================================================= */
-
-function sendToController(data) {
-
-    if (
-        connObj &&
-        connObj.open
-    ) {
-
-        try {
-            connObj.send(data);
-        } catch (e) {
-
-            console.error(
-                "Send error:",
-                e
-            );
-        }
-    }
-}
-
-
-function sendQueueUpdate() {
-
-    sendToController({
-        type: "QUEUE_UPDATE",
-        queue: queue
-    });
-}
-
-
-function syncQueue() {
-
-    updateQueueUI();
-
-    sendQueueUpdate();
-}
-
-
-function updateQueueUI() {
-
-    queueList.innerHTML = "";
-
-    if (queue.length === 0) {
-
-        queueBox.classList.remove("show");
-
-        return;
-    }
-
-    queueBox.classList.add("show");
-
-    queue.forEach((song, index) => {
-
-        const item =
-            document.createElement("div");
-
-        item.className =
-            "queue-item";
-
-        if (index === 0) {
-            item.classList.add(
-                "queue-current"
-            );
-        }
-
-        const number =
-            document.createElement("div");
-
-        number.className =
-            "queue-number";
-
-        number.textContent =
-            index + 1;
-
-
-        const name =
-            document.createElement("div");
-
-        name.className =
-            "queue-name";
-
-        name.textContent =
-            song.title || "ไม่ทราบชื่อ";
-
-
-        item.appendChild(number);
-        item.appendChild(name);
-
-        queueList.appendChild(item);
-    });
-}
-
-
-/* =========================================================
-   COMMAND HANDLER
-========================================================= */
-
-function handleCommand(data) {
-
-    if (!data || !data.type) {
-        return;
-    }
-
-
-    switch (data.type) {
-
-        case "ADD_SONG":
-            addSong(data.song);
-            break;
-
-
-        case "SKIP":
-            skipSong();
-            break;
-
-
-        case "TOGGLE_PLAY":
-            togglePlay();
-            break;
-
-
-        case "DELETE_SONG":
-            deleteSong(data.index);
-            break;
-
-
-        case "MOVE_SONG":
-            moveSong(
-                data.from,
-                data.to
-            );
-            break;
-
-
-        case "RETRY_PLAY":
-            retryCurrentSong();
-            break;
-
-
-        default:
-            console.warn(
-                "Unknown command:",
-                data.type
-            );
-    }
-}
-
-
-/* =========================================================
-   ADD SONG
-========================================================= */
-
-function addSong(song) {
-
-    if (!song || !song.videoId) {
-
-        console.warn(
-            "Invalid song:",
-            song
-        );
-
-        return;
-    }
-
-    queue.push({
-        videoId: song.videoId,
-        title: song.title || "เพลงไม่ทราบชื่อ",
-        thumbnail: song.thumbnail || ""
-    });
-
-    console.log(
-        "Song added:",
-        song.title
-    );
-
-    syncQueue();
-
-    /*
-       ถ้าเป็นเพลงแรก
-       ให้เริ่มเล่นทันที
-    */
-
-    if (
-        queue.length === 1 &&
-        isAppReady &&
-        player
-    ) {
-
-        playCurrent();
-    }
-}
-
-
-/* =========================================================
-   PLAY CURRENT
-========================================================= */
-
-function playCurrent() {
-
-    if (
-        !player ||
-        queue.length === 0
-    ) {
-
-        if (queue.length === 0) {
-            showIdleScreen();
-        }
-
-        return;
-    }
-
-    const song =
-        queue[0];
-
-    transitionLock = false;
-
-    emptyState.style.display =
-        "none";
-
-    playerWrapper.style.display =
-        "block";
-
-    startBackgroundRotation();
-
-    showNowPlaying(
-        song.title
-    );
-
-    updateQueueUI();
-
-    try {
-
-        player.loadVideoById(
-            song.videoId
-        );
-
-    } catch (e) {
-
-        console.error(
-            "loadVideoById error:",
-            e
-        );
-    }
-}
-
-
-/* =========================================================
-   YOUTUBE
-========================================================= */
-
-function onYouTubeIframeAPIReady() {
-
-    console.log(
-        "YouTube API ready"
-    );
-
-    player =
-        new YT.Player(
-            "player",
-            {
-                width: "100%",
-                height: "100%",
-
-                playerVars: {
-                    autoplay: 0,
-                    controls: 1,
-                    rel: 0,
-                    modestbranding: 1,
-                    playsinline: 1
-                },
-
-                events: {
-                    onReady:
-                        onPlayerReady,
-
-                    onStateChange:
-                        onPlayerStateChange,
-
-                    onError:
-                        onPlayerError
-                }
-            }
-        );
-}
-
-
-function onPlayerReady() {
-
-    console.log(
-        "YouTube player ready"
-    );
-
-    isAppReady = true;
-
-    /*
-       ถ้ามีเพลงรออยู่
-       เริ่มเล่นเพลงแรก
-    */
-
-    if (queue.length > 0) {
-        playCurrent();
-    }
-}
-
-
-function disableYouTubeCaptions() {
-
-    try {
-
-        if (player) {
-
-            player.unloadModule(
-                "captions"
-            );
-        }
-
-    } catch (e) {
-        console.warn(
-            "Caption disable:",
-            e
-        );
-    }
-}
-
-
-/* =========================================================
-   PLAYER STATE
-========================================================= */
-
-function onPlayerStateChange(event) {
-
-    if (
-        event.data ===
-        YT.PlayerState.PLAYING
-    ) {
-
-        disableYouTubeCaptions();
-
-        startScoreWatcher();
-
-    } else if (
-        event.data ===
-        YT.PlayerState.PAUSED
-    ) {
-
-        showUI();
-
-        stopScoreWatcher();
-
-    } else if (
-        event.data ===
-        YT.PlayerState.ENDED
-    ) {
-
-        finishCurrentSong();
-    }
-}
-
-
-/* =========================================================
-   FINISH SONG
-========================================================= */
-
-function finishCurrentSong() {
-
-    if (transitionLock) {
-        return;
-    }
-
-    transitionLock = true;
-
-    clearTimeout(uiTimer);
-
-    stopScoreWatcher();
-
-    /*
-       เอาเพลงที่เล่นจบออกจากคิวทันที
-    */
-
-    if (queue.length > 0) {
-        queue.shift();
-    }
-
-    syncQueue();
-
-    /*
-       แสดงคะแนน 8 วินาที
-    */
-
-    showScore();
-
-    clearTimeout(scoreTimer);
-
-    scoreTimer =
-        setTimeout(() => {
-
-            hideScore();
-
-            if (queue.length > 0) {
-
-                transitionLock = false;
-
-                playCurrent();
-
-            } else {
-
-                transitionLock = false;
-
-                showIdleScreen();
-            }
-
-        }, 8000);
-}
-
-
-/* =========================================================
-   MANUAL SKIP
-========================================================= */
-
-function skipSong() {
-
-    clearTimeout(scoreTimer);
-    clearTimeout(uiTimer);
-
-    stopScoreWatcher();
-
-    hideScore();
-    hideNowPlaying();
-
-    if (queue.length === 0) {
-
-        showIdleScreen();
-
-        return;
-    }
-
-    transitionLock = true;
-
-    /*
-       ลบเพลงปัจจุบัน
-    */
-
-    queue.shift();
-
-    syncQueue();
-
-    if (queue.length > 0) {
-
-        transitionLock = false;
-
-        playCurrent();
-
-    } else {
-
-        transitionLock = false;
-
-        showIdleScreen();
-    }
-}
-
-
-/* =========================================================
-   TOGGLE PLAY
-========================================================= */
-
-function togglePlay() {
-
-    if (!player) {
-        return;
-    }
-
-    try {
-
-        const state =
-            player.getPlayerState();
-
-        if (
-            state ===
-            YT.PlayerState.PLAYING
-        ) {
-
-            player.pauseVideo();
-
-        } else {
-
-            player.playVideo();
-        }
-
-    } catch (e) {
-
-        console.error(
-            "Toggle error:",
-            e
-        );
-    }
-}
-
-
-/* =========================================================
-   DELETE SONG
-========================================================= */
-
-function deleteSong(index) {
-
-    if (
-        typeof index !== "number" ||
-        index < 0 ||
-        index >= queue.length
-    ) {
-        return;
-    }
-
-    /*
-       ลบเพลงปัจจุบัน
-    */
-
-    if (index === 0) {
-
-        clearTimeout(scoreTimer);
-        clearTimeout(uiTimer);
-
-        stopScoreWatcher();
-
-        queue.shift();
-
-        syncQueue();
-
-        if (queue.length > 0) {
-
-            playCurrent();
-
-        } else {
-
-            showIdleScreen();
-        }
-
-        return;
-    }
-
-
-    /*
-       ลบเพลงในคิว
-    */
-
-    queue.splice(
-        index,
-        1
-    );
-
-    syncQueue();
-}
-
-
-/* =========================================================
-   MOVE SONG
-========================================================= */
-
-function moveSong(from, to) {
-
-    if (
-        typeof from !== "number" ||
-        typeof to !== "number"
-    ) {
-        return;
-    }
-
-    /*
-       ห้ามย้ายเพลงปัจจุบัน
-    */
-
-    if (
-        from <= 0 ||
-        to <= 0 ||
-        from >= queue.length ||
-        to >= queue.length
-    ) {
-        return;
-    }
-
-    const song =
-        queue.splice(
-            from,
-            1
-        )[0];
-
-    queue.splice(
-        to,
-        0,
-        song
-    );
-
-    syncQueue();
-}
-
-
-/* =========================================================
-   RETRY
-========================================================= */
-
-function retryCurrentSong() {
-
-    if (
-        queue.length === 0 ||
-        !player
-    ) {
-        return;
-    }
-
-    playCurrent();
-}
-
-
-/* =========================================================
-   PLAYER ERROR
-========================================================= */
-
-function onPlayerError(event) {
-
-    console.error(
-        "YouTube player error:",
-        event.data
-    );
-
-    stopScoreWatcher();
-
-    /*
-       รอเล็กน้อยแล้วข้ามเพลงเสีย
-    */
-
-    setTimeout(() => {
-
-        if (queue.length === 0) {
-
-            showIdleScreen();
-
             return;
         }
 
-        queue.shift();
+        if (conn) {
 
-        syncQueue();
+            try {
+                conn.close();
+            } catch {}
 
-        if (queue.length > 0) {
+        }
 
-            playCurrent();
+        console.log(
+            "Connecting to TV:",
+            roomId
+        );
+
+        setConnection(
+            "กำลังเชื่อมต่อ TV",
+            false
+        );
+
+        conn =
+            peer.connect(
+                roomId,
+                {
+                    reliable: true
+                }
+            );
+
+        conn.on(
+            "open",
+            () => {
+
+                console.log(
+                    "Connected to TV"
+                );
+
+                setConnection(
+                    "เชื่อมต่อแล้ว",
+                    true
+                );
+
+                showToast(
+                    "🟢 เชื่อมต่อ TV แล้ว"
+                );
+
+            }
+        );
+
+        conn.on(
+            "data",
+            handleData
+        );
+
+        conn.on(
+            "close",
+            () => {
+
+                console.log(
+                    "TV connection closed"
+                );
+
+                setConnection(
+                    "TV หลุดการเชื่อมต่อ",
+                    false
+                );
+
+                scheduleReconnect();
+
+            }
+        );
+
+        conn.on(
+            "error",
+            error => {
+
+                console.error(
+                    "Connection error:",
+                    error
+                );
+
+                setConnection(
+                    "เชื่อมต่อไม่สำเร็จ",
+                    false
+                );
+
+                scheduleReconnect();
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       RECONNECT
+    ========================================================= */
+
+    function scheduleReconnect() {
+
+        if (reconnectTimer) {
+            return;
+        }
+
+        reconnectTimer =
+            setTimeout(
+                () => {
+
+                    reconnectTimer =
+                        null;
+
+                    if (
+                        peer &&
+                        !peer.destroyed
+                    ) {
+
+                        connectToTV();
+
+                    } else {
+
+                        initPeer();
+
+                    }
+
+                },
+                3000
+            );
+
+    }
+
+
+    /* =========================================================
+       RECEIVE DATA
+    ========================================================= */
+
+    function handleData(data) {
+
+        if (
+            !data ||
+            !data.type
+        ) {
+            return;
+        }
+
+        console.log(
+            "TV:",
+            data
+        );
+
+        if (
+            data.type ===
+            "QUEUE_UPDATE"
+        ) {
+
+            currentQueue =
+                Array.isArray(
+                    data.queue
+                )
+                    ? data.queue
+                    : [];
+
+            renderQueue();
+
+        }
+
+    }
+
+
+    /* =========================================================
+       SEND ACTION
+    ========================================================= */
+
+    function sendAction(
+        type,
+        payload = {}
+    ) {
+
+        if (
+            !conn ||
+            !conn.open
+        ) {
+
+            showToast(
+                "🔴 ยังไม่ได้เชื่อมต่อ TV"
+            );
+
+            return false;
+
+        }
+
+        try {
+
+            conn.send({
+                type,
+                ...payload
+            });
+
+            return true;
+
+        } catch (error) {
+
+            console.error(
+                error
+            );
+
+            showToast(
+                "ส่งคำสั่งไม่สำเร็จ"
+            );
+
+            return false;
+
+        }
+
+    }
+
+
+    /* =========================================================
+       PLAY / PAUSE
+    ========================================================= */
+
+    function togglePlay() {
+
+        isPaused =
+            !isPaused;
+
+        const success =
+            sendAction(
+                "TOGGLE_PLAY",
+                {
+                    isPaused
+                }
+            );
+
+        if (!success) {
+
+            isPaused =
+                !isPaused;
+
+            return;
+
+        }
+
+        updatePauseButton();
+
+    }
+
+
+    function updatePauseButton() {
+
+        const button =
+            document.getElementById(
+                "pause-btn"
+            );
+
+        button.innerText =
+            isPaused
+                ? "▶️ เล่นต่อ"
+                : "⏸️ หยุดชั่วคราว";
+
+    }
+
+
+    /* =========================================================
+       SEARCH
+    ========================================================= */
+
+    async function searchMusic() {
+
+        const input =
+            document.getElementById(
+                "search-input"
+            );
+
+        const q =
+            input.value.trim();
+
+        if (!q) {
+
+            input.focus();
+
+            return;
+
+        }
+
+        const results =
+            document.getElementById(
+                "results"
+            );
+
+        const count =
+            document.getElementById(
+                "result-count"
+            );
+
+        results.innerHTML = `
+            <div class="loading">
+                🔎 กำลังค้นหาเพลง...
+            </div>
+        `;
+
+        count.innerText = "";
+
+        try {
+
+            const response =
+                await fetch(
+                    `/api/search?q=${encodeURIComponent(q)}`
+                );
+
+            if (!response.ok) {
+
+                throw new Error(
+                    `HTTP ${response.status}`
+                );
+
+            }
+
+            const data =
+                await response.json();
+
+            /*
+             * API ของเรา:
+             *
+             * {
+             *   success: true,
+             *   results: [...]
+             * }
+             */
+
+            if (
+                !data ||
+                data.success !== true ||
+                !Array.isArray(
+                    data.results
+                )
+            ) {
+
+                throw new Error(
+                    data?.error ||
+                    "รูปแบบข้อมูลไม่ถูกต้อง"
+                );
+
+            }
+
+            const songs =
+                data.results;
+
+            count.innerText =
+                `${songs.length} รายการ`;
+
+            if (
+                songs.length === 0
+            ) {
+
+                results.innerHTML = `
+                    <div class="loading">
+                        😢 ไม่พบเพลง
+                    </div>
+                `;
+
+                return;
+
+            }
+
+            results.innerHTML =
+                songs.map(
+                    song =>
+                        createResultHtml(
+                            song
+                        )
+                ).join("");
+
+        } catch (error) {
+
+            console.error(
+                "Search error:",
+                error
+            );
+
+            results.innerHTML = `
+                <div class="error">
+                    ❌ ค้นหาไม่สำเร็จ
+                    <br>
+                    <small>
+                        ${escapeHtml(
+                            error.message
+                        )}
+                    </small>
+                </div>
+            `;
+
+        }
+
+    }
+
+
+    /* =========================================================
+       SEARCH RESULT
+    ========================================================= */
+
+    function createResultHtml(
+        song
+    ) {
+
+        const safeSong =
+            encodeURIComponent(
+                JSON.stringify(song)
+            );
+
+        const thumbnail =
+            song.thumbnail ||
+            `https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`;
+
+        const channel =
+            song.channel ||
+            song.author ||
+            "";
+
+        const duration =
+            song.duration
+                ? ` • ${song.duration}`
+                : "";
+
+        return `
+            <div class="result-item">
+
+                <img
+                    class="result-thumb"
+                    src="${escapeHtml(
+                        thumbnail
+                    )}"
+                    loading="lazy"
+                    onerror="this.style.visibility='hidden'"
+                >
+
+                <div class="result-info">
+
+                    <div class="result-title">
+                        ${escapeHtml(
+                            song.title ||
+                            "ไม่ทราบชื่อ"
+                        )}
+                    </div>
+
+                    <div class="result-meta">
+                        ${escapeHtml(
+                            channel
+                        )}
+                        ${escapeHtml(
+                            duration
+                        )}
+                    </div>
+
+                </div>
+
+                <button
+                    class="btn-add"
+                    data-song="${safeSong}"
+                    onclick="addSongFromButton(this)"
+                >
+                    ＋ จอง
+                </button>
+
+            </div>
+        `;
+
+    }
+
+
+    /* =========================================================
+       ADD SONG
+    ========================================================= */
+
+    function addSongFromButton(
+        button
+    ) {
+
+        try {
+
+            const encoded =
+                button.dataset.song;
+
+            const song =
+                JSON.parse(
+                    decodeURIComponent(
+                        encoded
+                    )
+                );
+
+            addSong(song);
+
+        } catch (error) {
+
+            console.error(
+                error
+            );
+
+            showToast(
+                "เพิ่มเพลงไม่สำเร็จ"
+            );
+
+        }
+
+    }
+
+
+    function addSong(song) {
+
+        if (
+            !song ||
+            !song.videoId
+        ) {
+
+            showToast(
+                "เพลงนี้ไม่มี Video ID"
+            );
+
+            return;
+
+        }
+
+        /*
+         * ตรวจเพลงซ้ำ
+         */
+
+        if (
+            currentQueue.some(
+                item =>
+                    item.videoId ===
+                    song.videoId
+            )
+        ) {
+
+            showToast(
+                "🎵 เพลงนี้อยู่ในคิวแล้ว"
+            );
+
+            return;
+
+        }
+
+        const success =
+            sendAction(
+                "ADD_SONG",
+                {
+                    song
+                }
+            );
+
+        if (success) {
+
+            showToast(
+                "🎵 เพิ่มเพลงเข้าคิวแล้ว"
+            );
+
+            /*
+             * ไม่เพิ่มเข้า currentQueue
+             * เอง เพราะให้ TV เป็น
+             * Source of Truth
+             */
+
+        }
+
+    }
+
+
+    /* =========================================================
+       QUEUE RENDER
+    ========================================================= */
+
+    function renderQueue() {
+
+        const list =
+            document.getElementById(
+                "queue-list"
+            );
+
+        const count =
+            document.getElementById(
+                "queue-count"
+            );
+
+        count.innerText =
+            `${currentQueue.length} เพลง`;
+
+        if (
+            currentQueue.length === 0
+        ) {
+
+            list.innerHTML = `
+                <div class="queue-empty">
+                    🎵 ยังไม่มีเพลงในคิว
+                </div>
+            `;
+
+            return;
+
+        }
+
+        list.innerHTML =
+            currentQueue.map(
+                (song, index) => {
+
+                    const isPlaying =
+                        index === 0;
+
+                    return `
+                        <div
+                            class="queue-item ${
+                                isPlaying
+                                    ? "playing"
+                                    : ""
+                            }"
+                        >
+
+                            <div class="queue-number">
+                                ${
+                                    isPlaying
+                                        ? "▶"
+                                        : index + 1
+                                }
+                            </div>
+
+                            <div class="queue-info">
+
+                                ${
+                                    isPlaying
+                                        ? `
+                                            <div class="queue-status">
+                                                กำลังเล่น
+                                            </div>
+                                          `
+                                        : ""
+                                }
+
+                                <div class="queue-title">
+                                    ${escapeHtml(
+                                        song.title ||
+                                        "ไม่ทราบชื่อ"
+                                    )}
+                                </div>
+
+                                <div class="queue-channel">
+                                    ${escapeHtml(
+                                        song.channel ||
+                                        song.author ||
+                                        ""
+                                    )}
+                                </div>
+
+                            </div>
+
+                            <div class="queue-actions">
+
+                                ${
+                                    isPlaying
+                                        ? `
+                                            <button
+                                                class="queue-btn retry"
+                                                onclick="retryPlay()"
+                                            >
+                                                เริ่มใหม่
+                                            </button>
+                                          `
+                                        : ""
+                                }
+
+                                ${
+                                    index > 0
+                                        ? `
+                                            <button
+                                                class="queue-btn orange"
+                                                onclick="moveSong(
+                                                    ${index},
+                                                    'up'
+                                                )"
+                                            >
+                                                ▲
+                                            </button>
+                                          `
+                                        : ""
+                                }
+
+                                ${
+                                    index > 0 &&
+                                    index <
+                                        currentQueue.length - 1
+                                        ? `
+                                            <button
+                                                class="queue-btn orange"
+                                                onclick="moveSong(
+                                                    ${index},
+                                                    'down'
+                                                )"
+                                            >
+                                                ▼
+                                            </button>
+                                          `
+                                        : ""
+                                }
+
+                                ${
+                                    !isPlaying
+                                        ? `
+                                            <button
+                                                class="queue-btn red"
+                                                onclick="deleteSong(
+                                                    ${index}
+                                                )"
+                                            >
+                                                🗑
+                                            </button>
+                                          `
+                                        : ""
+                                }
+
+                            </div>
+
+                        </div>
+                    `;
+
+                }
+            )
+            .join("");
+
+    }
+
+
+    /* =========================================================
+       QUEUE ACTIONS
+    ========================================================= */
+
+    function deleteSong(index) {
+
+        if (
+            index < 0 ||
+            index >= currentQueue.length
+        ) {
+
+            return;
+
+        }
+
+        const song =
+            currentQueue[index];
+
+        const title =
+            song?.title ||
+            "เพลงนี้";
+
+        if (
+            !confirm(
+                `ลบ "${title}" ออกจากคิว?`
+            )
+        ) {
+
+            return;
+
+        }
+
+        sendAction(
+            "DELETE_SONG",
+            {
+                index
+            }
+        );
+
+    }
+
+
+    function moveSong(
+        index,
+        direction
+    ) {
+
+        sendAction(
+            "MOVE_SONG",
+            {
+                index,
+                direction
+            }
+        );
+
+    }
+
+
+    function retryPlay() {
+
+        sendAction(
+            "RETRY_PLAY"
+        );
+
+        showToast(
+            "🔄 เริ่มเพลงใหม่"
+        );
+
+    }
+
+
+    /* =========================================================
+       CONNECTION UI
+    ========================================================= */
+
+    function setConnection(
+        text,
+        online
+    ) {
+
+        const box =
+            document.getElementById(
+                "connection"
+            );
+
+        const label =
+            document.getElementById(
+                "connection-text"
+            );
+
+        label.innerText =
+            text;
+
+        if (online) {
+
+            box.classList.add(
+                "online"
+            );
 
         } else {
 
-            showIdleScreen();
-        }
-
-    }, 1500);
-}
-
-
-/* =========================================================
-   SCORE WATCHER
-========================================================= */
-
-function startScoreWatcher() {
-
-    stopScoreWatcher();
-
-    scoreWatcher =
-        setInterval(() => {
-
-            if (
-                !player ||
-                queue.length === 0
-            ) {
-                return;
-            }
-
-            try {
-
-                const duration =
-                    player.getDuration();
-
-                const current =
-                    player.getCurrentTime();
-
-                if (
-                    duration > 0 &&
-                    duration - current <= 5 &&
-                    duration - current > 0
-                ) {
-
-                    showScore();
-
-                    /*
-                       ไม่ให้แสดงซ้ำ
-                    */
-
-                    stopScoreWatcher();
-                }
-
-            } catch (e) {
-
-                console.warn(
-                    "Score watcher:",
-                    e
-                );
-            }
-
-        }, 500);
-}
-
-
-function stopScoreWatcher() {
-
-    if (scoreWatcher) {
-
-        clearInterval(
-            scoreWatcher
-        );
-
-        scoreWatcher = null;
-    }
-}
-
-
-/* =========================================================
-   SCORE
-========================================================= */
-
-function showScore() {
-
-    /*
-       สุ่มคะแนน 80 - 100
-    */
-
-    const score =
-        Math.floor(
-            Math.random() * 21
-        ) + 80;
-
-    scoreNumber.textContent =
-        score;
-
-    if (score >= 95) {
-
-        scoreMessage.textContent =
-            "สุดยอดมาก! 🔥";
-
-    } else if (score >= 90) {
-
-        scoreMessage.textContent =
-            "เยี่ยมมาก! 🎤";
-
-    } else if (score >= 85) {
-
-        scoreMessage.textContent =
-            "ทำได้ดีครับ 👍";
-
-    } else {
-
-        scoreMessage.textContent =
-            "เก่งมากครับ 👏";
-    }
-
-    scoreOverlay.classList.add(
-        "show"
-    );
-}
-
-
-function hideScore() {
-
-    scoreOverlay.classList.remove(
-        "show"
-    );
-}
-
-
-/* =========================================================
-   INIT APP
-========================================================= */
-
-function initApp() {
-
-    startOverlay.style.display =
-        "none";
-
-    initRoom();
-
-    startBackgroundRotation();
-
-    /*
-       โหลด YouTube IFrame API
-    */
-
-    if (
-        !window.YT ||
-        !window.YT.Player
-    ) {
-
-        const tag =
-            document.createElement(
-                "script"
+            box.classList.remove(
+                "online"
             );
 
-        tag.src =
-            "https://www.youtube.com/iframe_api";
+        }
 
-        document.head.appendChild(
-            tag
+    }
+
+
+    /* =========================================================
+       TOAST
+    ========================================================= */
+
+    function showToast(
+        message
+    ) {
+
+        const toast =
+            document.getElementById(
+                "toast"
+            );
+
+        toast.innerText =
+            message;
+
+        toast.classList.add(
+            "show"
         );
 
-    } else {
+        if (toastTimer) {
 
-        onYouTubeIframeAPIReady();
+            clearTimeout(
+                toastTimer
+            );
+
+        }
+
+        toastTimer =
+            setTimeout(
+                () => {
+
+                    toast.classList.remove(
+                        "show"
+                    );
+
+                },
+                2200
+            );
+
     }
 
-    showIdleScreen();
-}
 
+    /* =========================================================
+       HTML ESCAPE
+    ========================================================= */
 
-/* =========================================================
-   START BUTTON
-========================================================= */
+    function escapeHtml(
+        value
+    ) {
 
-startButton.addEventListener(
-    "click",
-    () => {
-
-        initApp();
+        return String(
+            value ?? ""
+        )
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+            .replace(
+                /</g,
+                "&lt;"
+            )
+            .replace(
+                />/g,
+                "&gt;"
+            )
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+            .replace(
+                /'/g,
+                "&#039;"
+            );
 
     }
-);
 
 
-/* =========================================================
-   DEBUG
-========================================================= */
+    /* =========================================================
+       ENTER SEARCH
+    ========================================================= */
 
-window.addEventListener(
-    "error",
-    event => {
+    document
+        .getElementById(
+            "search-input"
+        )
+        .addEventListener(
+            "keydown",
+            event => {
 
-        console.error(
-            "Global error:",
-            event.error ||
-            event.message
+                if (
+                    event.key ===
+                    "Enter"
+                ) {
+
+                    searchMusic();
+
+                }
+
+            }
         );
-    }
-);
-</script></body>
+
+
+    /* =========================================================
+       INIT
+    ========================================================= */
+
+    getRoom();
+
+    initPeer();
+
+    renderQueue();
+
+</script>
+
+</body>
 </html>
