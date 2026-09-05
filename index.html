@@ -7,6 +7,7 @@
     <title>Napat Karaoke Pro</title>
 
     <style>
+
         * {
             box-sizing: border-box;
         }
@@ -32,7 +33,7 @@
         .search-box {
             display: flex;
             gap: 10px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         .search-box input {
@@ -64,6 +65,10 @@
             color: #aaa;
         }
 
+        /* =========================
+           SEARCH RESULTS
+        ========================= */
+
         .result {
             display: flex;
             gap: 15px;
@@ -71,11 +76,6 @@
             margin-bottom: 12px;
             padding: 12px;
             border-radius: 12px;
-            cursor: pointer;
-        }
-
-        .result:hover {
-            background: #292929;
         }
 
         .thumbnail {
@@ -104,7 +104,131 @@
 
         .duration {
             color: #888;
+            margin-bottom: 10px;
         }
+
+        .select-button {
+            background: #00a86b;
+            color: white;
+            border: none;
+            padding: 9px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .select-button:hover {
+            background: #00bd78;
+        }
+
+        /* =========================
+           QUEUE
+        ========================= */
+
+        .queue-section {
+            margin-top: 35px;
+        }
+
+        .queue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .queue-header h2 {
+            margin: 0;
+        }
+
+        .queue-count {
+            color: #aaa;
+        }
+
+        .queue-empty {
+            text-align: center;
+            color: #777;
+            padding: 30px;
+            background: #181818;
+            border-radius: 12px;
+        }
+
+        .queue-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #1d1d1d;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .queue-number {
+            width: 35px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #e91e63;
+            flex-shrink: 0;
+        }
+
+        .queue-thumbnail {
+            width: 110px;
+            height: 62px;
+            object-fit: cover;
+            border-radius: 7px;
+            flex-shrink: 0;
+        }
+
+        .queue-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .queue-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .queue-channel {
+            color: #999;
+            font-size: 13px;
+        }
+
+        .remove-button {
+            background: #c62828;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 7px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .remove-button:hover {
+            background: #e53935;
+        }
+
+        .clear-button {
+            background: #333;
+            color: #ccc;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 7px;
+            cursor: pointer;
+        }
+
+        .clear-button:hover {
+            background: #444;
+        }
+
+        .added {
+            background: #555 !important;
+            cursor: default !important;
+        }
+
+        /* =========================
+           MOBILE
+        ========================= */
 
         @media (max-width: 600px) {
 
@@ -120,6 +244,10 @@
                 padding: 0 15px;
             }
 
+            .result {
+                gap: 10px;
+            }
+
             .thumbnail {
                 width: 120px;
                 height: 68px;
@@ -132,7 +260,31 @@
             .channel {
                 font-size: 13px;
             }
+
+            .duration {
+                font-size: 13px;
+            }
+
+            .select-button {
+                padding: 7px 10px;
+                font-size: 13px;
+            }
+
+            .queue-thumbnail {
+                width: 90px;
+                height: 51px;
+            }
+
+            .queue-title {
+                font-size: 14px;
+            }
+
+            .remove-button {
+                padding: 7px 9px;
+            }
+
         }
+
     </style>
 </head>
 
@@ -141,6 +293,8 @@
 <div class="container">
 
     <h1>🎤 Napat Karaoke Pro</h1>
+
+    <!-- SEARCH -->
 
     <div class="search-box">
 
@@ -163,40 +317,107 @@
 
     <div id="results"></div>
 
+
+    <!-- QUEUE -->
+
+    <div class="queue-section">
+
+        <div class="queue-header">
+
+            <h2>🎵 คิวเพลง</h2>
+
+            <div>
+
+                <span
+                    id="queueCount"
+                    class="queue-count"
+                >
+                    0 เพลง
+                </span>
+
+                <button
+                    class="clear-button"
+                    onclick="clearQueue()"
+                >
+                    ล้างคิว
+                </button>
+
+            </div>
+
+        </div>
+
+        <div id="queue"></div>
+
+    </div>
+
 </div>
+
 
 <script>
 
+let queue = JSON.parse(
+    localStorage.getItem("napatKaraokeQueue") || "[]"
+);
+
+
+/* =========================
+   SEARCH
+========================= */
+
 async function searchYouTube() {
 
-    const input = document.getElementById("searchInput");
-    const results = document.getElementById("results");
-    const status = document.getElementById("status");
+    const input =
+        document.getElementById("searchInput");
 
-    const q = input.value.trim();
+    const results =
+        document.getElementById("results");
+
+    const status =
+        document.getElementById("status");
+
+    const q =
+        input.value.trim();
 
     if (!q) {
-        status.textContent = "กรุณาพิมพ์ชื่อเพลง";
+
+        status.textContent =
+            "กรุณาพิมพ์ชื่อเพลง";
+
         return;
     }
 
-    status.textContent = "กำลังค้นหา...";
+    status.textContent =
+        "กำลังค้นหา...";
+
     results.innerHTML = "";
 
     try {
 
         const response = await fetch(
-            "/api/search?q=" + encodeURIComponent(q)
+            "/api/search?q=" +
+            encodeURIComponent(q)
         );
 
-        const data = await response.json();
+        const data =
+            await response.json();
 
         if (!data.success) {
-            throw new Error(data.error || "Search failed");
+
+            throw new Error(
+                data.error ||
+                "Search failed"
+            );
+
         }
 
-        if (!data.results || data.results.length === 0) {
-            status.textContent = "ไม่พบเพลง";
+        if (
+            !data.results ||
+            data.results.length === 0
+        ) {
+
+            status.textContent =
+                "ไม่พบเพลง";
+
             return;
         }
 
@@ -205,9 +426,17 @@ async function searchYouTube() {
 
         data.results.forEach(video => {
 
-            const item = document.createElement("div");
+            const item =
+                document.createElement("div");
 
-            item.className = "result";
+            item.className =
+                "result";
+
+            const alreadyAdded =
+                queue.some(
+                    song =>
+                        song.videoId === video.videoId
+                );
 
             item.innerHTML = `
 
@@ -231,18 +460,32 @@ async function searchYouTube() {
                         ⏱ ${video.duration}
                     </div>
 
-                </div>
+                    <button
+                        class="select-button ${alreadyAdded ? "added" : ""}"
+                        ${alreadyAdded ? "disabled" : ""}
+                    >
+                        ${alreadyAdded
+                            ? "✓ อยู่ในคิว"
+                            : "➕ เลือกเพลง"}
+                    </button>
 
+                </div>
             `;
 
-            item.onclick = () => {
-
-                window.open(
-                    video.url,
-                    "_blank"
+            const button =
+                item.querySelector(
+                    ".select-button"
                 );
 
-            };
+            if (!alreadyAdded) {
+
+                button.onclick = () => {
+
+                    addToQueue(video);
+
+                };
+
+            }
 
             results.appendChild(item);
 
@@ -256,28 +499,235 @@ async function searchYouTube() {
             "เกิดข้อผิดพลาดในการค้นหา";
 
     }
+
 }
 
+
+/* =========================
+   ADD TO QUEUE
+========================= */
+
+function addToQueue(video) {
+
+    const exists =
+        queue.some(
+            song =>
+                song.videoId === video.videoId
+        );
+
+    if (exists) {
+
+        alert("เพลงนี้อยู่ในคิวแล้ว");
+
+        return;
+    }
+
+    queue.push({
+
+        videoId: video.videoId,
+
+        title: video.title,
+
+        channel: video.channel,
+
+        thumbnail: video.thumbnail,
+
+        duration: video.duration,
+
+        url: video.url
+
+    });
+
+    saveQueue();
+
+    renderQueue();
+
+    alert(
+        "เพิ่มเพลงเข้าคิวแล้ว 🎵"
+    );
+
+}
+
+
+/* =========================
+   RENDER QUEUE
+========================= */
+
+function renderQueue() {
+
+    const container =
+        document.getElementById("queue");
+
+    const count =
+        document.getElementById("queueCount");
+
+    container.innerHTML = "";
+
+    count.textContent =
+        `${queue.length} เพลง`;
+
+    if (queue.length === 0) {
+
+        container.innerHTML = `
+
+            <div class="queue-empty">
+                ยังไม่มีเพลงในคิว
+            </div>
+
+        `;
+
+        return;
+    }
+
+    queue.forEach(
+        (song, index) => {
+
+            const item =
+                document.createElement("div");
+
+            item.className =
+                "queue-item";
+
+            item.innerHTML = `
+
+                <div class="queue-number">
+                    ${index + 1}
+                </div>
+
+                <img
+                    class="queue-thumbnail"
+                    src="${song.thumbnail}"
+                    loading="lazy"
+                >
+
+                <div class="queue-info">
+
+                    <div class="queue-title">
+                        ${escapeHtml(song.title)}
+                    </div>
+
+                    <div class="queue-channel">
+                        ${escapeHtml(song.channel)}
+                        • ${song.duration}
+                    </div>
+
+                </div>
+
+                <button
+                    class="remove-button"
+                    onclick="removeFromQueue(${index})"
+                >
+                    🗑️
+                </button>
+
+            `;
+
+            container.appendChild(item);
+
+        }
+    );
+
+}
+
+
+/* =========================
+   REMOVE
+========================= */
+
+function removeFromQueue(index) {
+
+    queue.splice(index, 1);
+
+    saveQueue();
+
+    renderQueue();
+
+}
+
+
+/* =========================
+   CLEAR QUEUE
+========================= */
+
+function clearQueue() {
+
+    if (queue.length === 0) {
+        return;
+    }
+
+    if (
+        !confirm(
+            "ต้องการล้างคิวเพลงทั้งหมดหรือไม่?"
+        )
+    ) {
+        return;
+    }
+
+    queue = [];
+
+    saveQueue();
+
+    renderQueue();
+
+}
+
+
+/* =========================
+   SAVE
+========================= */
+
+function saveQueue() {
+
+    localStorage.setItem(
+        "napatKaraokeQueue",
+        JSON.stringify(queue)
+    );
+
+}
+
+
+/* =========================
+   HTML SECURITY
+========================= */
 
 function escapeHtml(text) {
 
-    const div = document.createElement("div");
+    const div =
+        document.createElement("div");
 
-    div.textContent = text || "";
+    div.textContent =
+        text || "";
 
     return div.innerHTML;
+
 }
 
 
+/* =========================
+   ENTER TO SEARCH
+========================= */
+
 document
     .getElementById("searchInput")
-    .addEventListener("keydown", function(event) {
+    .addEventListener(
+        "keydown",
+        function(event) {
 
-        if (event.key === "Enter") {
-            searchYouTube();
+            if (event.key === "Enter") {
+
+                searchYouTube();
+
+            }
+
         }
+    );
 
-    });
+
+/* =========================
+   INITIAL
+========================= */
+
+renderQueue();
 
 </script>
 
