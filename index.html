@@ -1,524 +1,3 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#08080a">
-    <title>Napat Karaoke Pro - All in One</title>
-
-    <style>
-        :root {
-            --red: #ff2d55;
-            --pink: #ff375f;
-            --green: #32d74b;
-            --blue: #0a84ff;
-            --orange: #ff9f0a;
-            --purple: #bf5af2;
-            --dark: #070709;
-            --card: #151518;
-            --card2: #1c1c20;
-            --border: rgba(255,255,255,.09);
-            --muted: #8e8e93;
-        }
-
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        html, body {
-            margin: 0;
-            padding: 0;
-            min-height: 100%;
-            background: var(--dark);
-            color: white;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-        }
-
-        body {
-            padding-bottom: 35px;
-        }
-
-        button, input {
-            font: inherit;
-        }
-
-        button {
-            cursor: pointer;
-        }
-
-        .app {
-            width: min(850px, 100%);
-            margin: auto;
-            padding: 14px;
-        }
-
-        /* HEADER */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 4px 14px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 11px;
-        }
-
-        .brand-icon {
-            width: 44px;
-            height: 44px;
-            display: grid;
-            place-items: center;
-            border-radius: 14px;
-            background: linear-gradient(135deg, var(--red), #ff7048);
-            font-size: 22px;
-            box-shadow: 0 8px 25px rgba(255,45,85,.28);
-        }
-
-        .brand-title {
-            font-size: 17px;
-            font-weight: 900;
-        }
-
-        .brand-sub {
-            margin-top: 2px;
-            color: var(--muted);
-            font-size: 11px;
-        }
-
-        .badge-mode {
-            padding: 6px 12px;
-            border-radius: 20px;
-            background: rgba(255,255,255,.06);
-            border: 1px solid var(--border);
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--green);
-        }
-
-        /* VIDEO PLAYER STAGE */
-        .player-wrapper {
-            position: relative;
-            width: 100%;
-            padding-top: 56.25%; /* 16:9 Aspect Ratio */
-            border-radius: 18px;
-            overflow: hidden;
-            background: #000;
-            border: 1px solid var(--border);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            margin-bottom: 14px;
-        }
-
-        .player-wrapper iframe, 
-        .player-wrapper #player {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: 0;
-        }
-
-        .player-placeholder {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: var(--card);
-            color: var(--muted);
-            text-align: center;
-            padding: 20px;
-        }
-
-        .player-placeholder.hidden {
-            display: none;
-        }
-
-        /* CONTROLS */
-        .main-controls {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 9px;
-            margin-bottom: 14px;
-        }
-
-        .control-btn {
-            border: 0;
-            border-radius: 16px;
-            min-height: 48px;
-            color: white;
-            font-weight: 900;
-            font-size: 13px;
-            transition: transform .12s ease, opacity .12s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-
-        .control-btn:active {
-            transform: scale(.97);
-            opacity: .82;
-        }
-
-        .btn-skip {
-            background: linear-gradient(135deg, var(--red), #ff7048);
-            box-shadow: 0 6px 20px rgba(255,45,85,.2);
-        }
-
-        .btn-pause {
-            background: linear-gradient(135deg, #5856d6, #8b5cf6);
-        }
-
-        .btn-retry {
-            background: var(--card2);
-            border: 1px solid var(--border);
-        }
-
-        /* SEARCH SECTION */
-        .section-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 18px 3px 9px;
-            font-size: 14px;
-            font-weight: 900;
-        }
-
-        .section-count {
-            color: var(--green);
-            font-size: 11px;
-        }
-
-        .search-box {
-            display: flex;
-            gap: 8px;
-        }
-
-        #search-input {
-            min-width: 0;
-            flex: 1;
-            padding: 14px 15px;
-            border-radius: 14px;
-            border: 1px solid #29292e;
-            outline: none;
-            background: #141416;
-            color: white;
-            font-size: 14px;
-        }
-
-        #search-input:focus {
-            border-color: rgba(10,132,255,.7);
-            box-shadow: 0 0 0 3px rgba(10,132,255,.08);
-        }
-
-        .btn-search {
-            width: 85px;
-            border: 0;
-            border-radius: 14px;
-            background: var(--blue);
-            color: white;
-            font-size: 13px;
-            font-weight: 900;
-        }
-
-        /* RESULTS */
-        #results {
-            margin-top: 10px;
-            max-height: 380px;
-            overflow-y: auto;
-        }
-
-        .result-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            margin-bottom: 8px;
-            border-radius: 16px;
-            background: var(--card);
-            border: 1px solid var(--border);
-        }
-
-        .result-thumb {
-            width: 78px;
-            height: 52px;
-            flex-shrink: 0;
-            object-fit: cover;
-            border-radius: 9px;
-            background: #000;
-        }
-
-        .result-info {
-            min-width: 0;
-            flex: 1;
-        }
-
-        .result-title {
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            font-size: 12px;
-            font-weight: 700;
-            line-height: 1.35;
-        }
-
-        .result-meta {
-            margin-top: 4px;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            color: #777;
-            font-size: 10px;
-        }
-
-        .btn-action-group {
-            display: flex;
-            gap: 5px;
-            flex-shrink: 0;
-        }
-
-        .btn-add, .btn-play-now {
-            border: 0;
-            padding: 9px 11px;
-            border-radius: 11px;
-            color: white;
-            font-size: 11px;
-            font-weight: 900;
-        }
-
-        .btn-add {
-            background: var(--red);
-        }
-
-        .btn-play-now {
-            background: #2c2c30;
-            border: 1px solid var(--border);
-        }
-
-        /* QUEUE */
-        .queue-card {
-            overflow: hidden;
-            border-radius: 18px;
-            background: var(--card);
-            border: 1px solid var(--border);
-        }
-
-        #queue-list {
-            padding: 7px;
-        }
-
-        .queue-empty {
-            padding: 28px 10px;
-            text-align: center;
-            color: #666;
-            font-size: 13px;
-        }
-
-        .queue-item {
-            position: relative;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 11px;
-            margin-bottom: 6px;
-            border-radius: 14px;
-            background: rgba(255,255,255,.035);
-            border: 1px solid rgba(255,255,255,.05);
-        }
-
-        .queue-item.playing {
-            background: rgba(50,215,75,.09);
-            border-color: rgba(50,215,75,.28);
-        }
-
-        .queue-number {
-            width: 32px;
-            height: 32px;
-            flex-shrink: 0;
-            display: grid;
-            place-items: center;
-            border-radius: 10px;
-            background: #29292d;
-            color: #aaa;
-            font-size: 11px;
-            font-weight: 900;
-        }
-
-        .playing .queue-number {
-            background: var(--green);
-            color: #000;
-        }
-
-        .queue-info {
-            min-width: 0;
-            flex: 1;
-        }
-
-        .queue-status {
-            margin-bottom: 3px;
-            color: var(--green);
-            font-size: 9px;
-            font-weight: 900;
-        }
-
-        .queue-title {
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .queue-channel {
-            margin-top: 3px;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            color: #666;
-            font-size: 9px;
-        }
-
-        .queue-actions {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .queue-btn {
-            width: 32px;
-            height: 32px;
-            display: grid;
-            place-items: center;
-            padding: 0;
-            border: 0;
-            border-radius: 9px;
-            background: #29292d;
-            color: white;
-            font-size: 12px;
-            font-weight: 900;
-        }
-
-        .queue-btn.orange { color: var(--orange); }
-        .queue-btn.red { color: var(--red); }
-
-        /* TOAST */
-        #toast {
-            position: fixed;
-            left: 50%;
-            bottom: 22px;
-            z-index: 999;
-            transform: translate(-50%, 20px);
-            opacity: 0;
-            pointer-events: none;
-            padding: 11px 16px;
-            border-radius: 30px;
-            background: rgba(25,25,28,.94);
-            border: 1px solid rgba(255,255,255,.12);
-            box-shadow: 0 10px 35px rgba(0,0,0,.45);
-            color: white;
-            font-size: 12px;
-            font-weight: 700;
-            transition: opacity .25s ease, transform .25s ease;
-            white-space: nowrap;
-        }
-
-        #toast.show {
-            opacity: 1;
-            transform: translate(-50%, 0);
-        }
-
-        .loading {
-            padding: 25px 10px;
-            text-align: center;
-            color: #777;
-            font-size: 13px;
-        }
-
-        .error {
-            padding: 20px;
-            text-align: center;
-            color: var(--red);
-            font-size: 13px;
-        }
-    </style>
-</head>
-<body>
-
-<div class="app">
-
-    <!-- HEADER -->
-    <header class="header">
-        <div class="brand">
-            <div class="brand-icon">🎤</div>
-            <div>
-                <div class="brand-title">Napat Karaoke Pro</div>
-                <div class="brand-sub">Single Screen Edition</div>
-            </div>
-        </div>
-        <div class="badge-mode">
-            ● หน้าจอเดียว
-        </div>
-    </header>
-
-    <!-- YOUTUBE PLAYER SCREEN -->
-    <div class="player-wrapper">
-        <div id="player"></div>
-        <div id="player-placeholder" class="player-placeholder">
-            <div style="font-size: 40px; margin-bottom: 8px;">🎶</div>
-            <div style="font-weight: 700; font-size: 15px; color: #fff;">ยังไม่มีเพลงกำลังเล่น</div>
-            <div style="font-size: 12px; margin-top: 4px;">ค้นหาเพลงด้านล่างแล้วกด "เล่นเลย" หรือ "จอง"</div>
-        </div>
-    </div>
-
-    <!-- PLAYBACK CONTROLS -->
-    <div class="main-controls">
-        <button class="control-btn btn-skip" onclick="skipSong()">
-            ⏭️ ข้ามเพลง
-        </button>
-        <button id="pause-btn" class="control-btn btn-pause" onclick="togglePlay()">
-            ⏸️ หยุดชั่วคราว
-        </button>
-        <button class="control-btn btn-retry" onclick="retrySong()">
-            🔄 ร้องใหม่
-        </button>
-    </div>
-
-    <!-- SEARCH SECTION -->
-    <div class="section-title">
-        <span>🔎 ค้นหาเพลง</span>
-        <span id="result-count" class="section-count"></span>
-    </div>
-
-    <div class="search-box">
-        <input id="search-input" type="text" autocomplete="off" placeholder="พิมพ์ชื่อเพลง / ศิลปิน...">
-        <button class="btn-search" onclick="searchMusic()">ค้นหา</button>
-    </div>
-
-    <div id="results"></div>
-
-    <!-- QUEUE SECTION -->
-    <div class="section-title">
-        <span>🎶 คิวเพลง</span>
-        <span id="queue-count" class="section-count">0 เพลง</span>
-    </div>
-
-    <div class="queue-card">
-        <div id="queue-list">
-            <div class="queue-empty">🎵 ยังไม่มีเพลงในคิว</div>
-        </div>
-    </div>
-
-</div>
-
-<div id="toast"></div>
-
 <!-- YouTube IFrame API -->
 <script src="https://www.youtube.com/iframe_api"></script>
 
@@ -531,8 +10,10 @@
     let currentQueue = [];
     let isPaused = false;
     let toastTimer = null;
+    let pendingPlayVideoId = null;
 
-    function onYouTubeIframeAPIReady() {
+    // YouTube API Callback
+    window.onYouTubeIframeAPIReady = function() {
         player = new YT.Player('player', {
             height: '100%',
             width: '100%',
@@ -540,17 +21,25 @@
                 autoplay: 1,
                 controls: 1,
                 rel: 0,
-                modestbranding: 1
+                modestbranding: 1,
+                playsinline: 1,
+                origin: window.location.origin
             },
             events: {
                 'onReady': onPlayerReady,
-                'onStateChange': onPlayerStateChange
+                'onStateChange': onPlayerStateChange,
+                'onError': onPlayerError
             }
         });
-    }
+    };
 
-    function onPlayerReady() {
+    function onPlayerReady(event) {
         isPlayerReady = true;
+        // กรณีเคยกดเล่นไว้ก่อนที่ API จะพร้อม
+        if (pendingPlayVideoId) {
+            executePlay(pendingPlayVideoId);
+            pendingPlayVideoId = null;
+        }
     }
 
     function onPlayerStateChange(event) {
@@ -560,14 +49,23 @@
         }
     }
 
+    function onPlayerError(event) {
+        console.error("YouTube Player Error Code:", event.data);
+        showToast("⚠️ ไม่สามารถเล่นเพลงนี้ได้ (ข้ามไปเพลงถัดไป)");
+        setTimeout(() => {
+            skipSong();
+        }, 1500);
+    }
+
     /* =========================================================
        CORE PLAYBACK
     ========================================================= */
     function playCurrentSong() {
         const placeholder = document.getElementById('player-placeholder');
+        
         if (currentQueue.length === 0) {
             placeholder.classList.remove('hidden');
-            if (isPlayerReady && player) {
+            if (isPlayerReady && player && typeof player.stopVideo === 'function') {
                 player.stopVideo();
             }
             renderQueue();
@@ -576,13 +74,28 @@
 
         placeholder.classList.add('hidden');
         const song = currentQueue[0];
-        
-        if (isPlayerReady && player) {
-            player.loadVideoById(song.videoId);
+        executePlay(song.videoId);
+        renderQueue();
+    }
+
+    function executePlay(videoId) {
+        if (!isPlayerReady || !player || typeof player.loadVideoById !== 'function') {
+            // บันทึกไว้รอเล่นเมื่อ API พร้อม
+            pendingPlayVideoId = videoId;
+            return;
+        }
+
+        try {
+            player.loadVideoById({
+                videoId: videoId,
+                startSeconds: 0
+            });
+            player.playVideo();
             isPaused = false;
             updatePauseButton();
+        } catch (e) {
+            console.error("Play error:", e);
         }
-        renderQueue();
     }
 
     function togglePlay() {
@@ -723,18 +236,22 @@
             return;
         }
 
+        // กรณีจองเพลงปกติ
         if (currentQueue.some(item => item.videoId === song.videoId)) {
             showToast("🎵 เพลงนี้อยู่ในคิวแล้ว");
             return;
         }
 
         currentQueue.push(song);
+
+        // ถ้าไม่มีเพลงเล่นอยู่เลย ให้เริ่มเล่นทันที
         if (currentQueue.length === 1) {
             playCurrentSong();
+            showToast("▶️ เริ่มเล่นเพลงแรก");
         } else {
             renderQueue();
+            showToast("🎵 เพิ่มเพลงเข้าคิวแล้ว");
         }
-        showToast("🎵 เพิ่มเพลงเข้าคิวแล้ว");
     }
 
     function deleteSong(index) {
@@ -753,7 +270,7 @@
 
     function moveSong(index, direction) {
         const targetIndex = direction === 'up' ? index - 1 : index + 1;
-        if (targetIndex < 1 || targetIndex >= currentQueue.length) return; // ไม่ให้แซงเพลงกำลังเล่น (index 0)
+        if (targetIndex < 1 || targetIndex >= currentQueue.length) return;
 
         const temp = currentQueue[index];
         currentQueue[index] = currentQueue[targetIndex];
@@ -822,6 +339,3 @@
 
     renderQueue();
 </script>
-
-</body>
-</html>
