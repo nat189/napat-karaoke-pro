@@ -36,6 +36,7 @@
             flex-direction: column;
         }
 
+
         /* =========================
            VIDEO
         ========================= */
@@ -77,6 +78,7 @@
             margin-top: 10px;
         }
 
+
         /* =========================
            ROOM
         ========================= */
@@ -99,6 +101,7 @@
 
             z-index: 10;
         }
+
 
         /* =========================
            NOW PLAYING
@@ -133,6 +136,7 @@
 
             text-overflow: ellipsis;
         }
+
 
         /* =========================
            QUEUE
@@ -198,6 +202,31 @@
             color: #888;
 
             font-size: 13px;
+        }
+
+
+        /* =========================
+           MOBILE / SMALL SCREEN
+        ========================= */
+
+        @media (max-width: 800px) {
+
+            .now-playing {
+                padding: 15px 20px;
+            }
+
+            .now-title {
+                font-size: 24px;
+            }
+
+            .queue {
+                padding: 12px 20px;
+            }
+
+            .queue-item {
+                min-width: 240px;
+            }
+
         }
 
     </style>
@@ -290,142 +319,5 @@
 
 <script>
 
-/*
- * ==========================================
- * TEST SONG
- * ==========================================
- *
- * ตอนนี้ใช้เพลงทดสอบก่อน
- *
- * อ้ายมาส่งทาง - มนต์แคน แก่นคูน
- *
- */
-
-const TEST_VIDEO_ID =
-    "kn1Bg_yMB4M";
-
-const TEST_TITLE =
-    "อ้ายมาส่งทาง - มนต์แคน แก่นคูน";
-
 
 /*
- * ==========================================
- * YOUTUBE IFRAME API
- * ==========================================
- */
-
-let player;
-
-
-/*
- * โหลด YouTube API
- */
-
-const tag =
-    document.createElement("script");
-
-tag.src =
-    "https://www.youtube.com/iframe_api";
-
-document
-    .head
-    .appendChild(tag);
-
-
-/*
- * YouTube เรียก function นี้
- * หลัง API โหลดเสร็จ
- */
-
-function onYouTubeIframeAPIReady() {
-
-    player =
-        new YT.Player(
-            "player",
-            {
-
-                videoId:
-                    TEST_VIDEO_ID,
-
-                playerVars: {
-
-                    autoplay: 1,
-
-                    controls: 1,
-
-                    rel: 0,
-
-                    modestbranding: 1,
-
-                    playsinline: 1
-
-                },
-
-                events: {
-
-                    onReady:
-                        onPlayerReady,
-
-                    onStateChange:
-                        onPlayerStateChange
-
-                }
-
-            }
-        );
-
-}
-
-
-/*
- * Player พร้อม
- */
-
-function onPlayerReady(event) {
-
-    document
-        .getElementById("placeholder")
-        .style.display = "none";
-
-    document
-        .getElementById("nowTitle")
-        .textContent =
-            TEST_TITLE;
-
-}
-
-
-/*
- * ตรวจสถานะเพลง
- */
-
-function onPlayerStateChange(event) {
-
-    /*
-     * 0 = เพลงจบ
-     *
-     * ตอนนี้ยังไม่ทำอะไร
-     *
-     * STEP ต่อไปจะให้
-     * Queue เล่นเพลงถัดไปอัตโนมัติ
-     */
-
-    if (
-        event.data ===
-        YT.PlayerState.ENDED
-    ) {
-
-        console.log(
-            "Song ended"
-        );
-
-    }
-
-}
-
-</script>
-
-
-</body>
-
-</html>
