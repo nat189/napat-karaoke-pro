@@ -1,13 +1,270 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Display</title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Napat Karaoke Display</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .screen {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* =========================
+           VIDEO
+        ========================= */
+
+        .video-area {
+            flex: 1;
+            position: relative;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-placeholder {
+            text-align: center;
+            color: #555;
+        }
+
+        .video-placeholder .icon {
+            font-size: 80px;
+            margin-bottom: 15px;
+        }
+
+        .video-placeholder .text {
+            font-size: 28px;
+        }
+
+        /* =========================
+           NOW PLAYING
+        ========================= */
+
+        .now-playing {
+            min-height: 120px;
+            padding: 20px 40px;
+            background: #111;
+            border-top: 1px solid #222;
+        }
+
+        .now-label {
+            color: #e91e63;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .now-title {
+            font-size: 32px;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* =========================
+           QUEUE
+        ========================= */
+
+        .queue {
+            height: 180px;
+            padding: 15px 40px;
+            background: #181818;
+            overflow: hidden;
+        }
+
+        .queue-title {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .queue-list {
+            display: flex;
+            gap: 15px;
+            overflow: hidden;
+        }
+
+        .queue-item {
+            min-width: 300px;
+            padding: 12px;
+            background: #242424;
+            border-radius: 10px;
+        }
+
+        .queue-number {
+            color: #e91e63;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .queue-song {
+            margin-top: 5px;
+            font-size: 17px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .queue-channel {
+            margin-top: 5px;
+            color: #888;
+            font-size: 13px;
+        }
+
+        /* =========================
+           ROOM
+        ========================= */
+
+        .room {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        /* =========================
+           MOBILE / SMALL SCREEN
+        ========================= */
+
+        @media (max-width: 800px) {
+
+            .now-playing {
+                padding: 15px 20px;
+            }
+
+            .now-title {
+                font-size: 24px;
+            }
+
+            .queue {
+                padding: 12px 20px;
+            }
+
+            .queue-item {
+                min-width: 240px;
+            }
+
+        }
+
+    </style>
+
 </head>
+
+
 <body>
 
-    <h1>Karaoke Display</h1>
+<div class="screen">
+
+    <!-- VIDEO -->
+
+    <div class="video-area">
+
+        <div class="room">
+            ROOM: ----
+        </div>
+
+        <div class="video-placeholder">
+
+            <div class="icon">
+                🎤
+            </div>
+
+            <div class="text">
+                Napat Karaoke Pro
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- NOW PLAYING -->
+
+    <div class="now-playing">
+
+        <div class="now-label">
+            🎵 กำลังเล่น
+        </div>
+
+        <div
+            id="nowTitle"
+            class="now-title"
+        >
+            ยังไม่มีเพลง
+        </div>
+
+    </div>
+
+
+    <!-- QUEUE -->
+
+    <div class="queue">
+
+        <div class="queue-title">
+            🎶 เพลงถัดไป
+        </div>
+
+        <div
+            id="queueList"
+            class="queue-list"
+        >
+
+            <div style="color:#666">
+                ยังไม่มีเพลงในคิว
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    /*
+     * STEP 6.1
+     *
+     * ตอนนี้เป็นเพียง UI
+     *
+     * ยังไม่เชื่อม Queue
+     * และยังไม่เปิด YouTube
+     *
+     * เราจะต่อใน STEP 6.2
+     */
+
+</script>
 
 </body>
+
 </html>
