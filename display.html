@@ -2,51 +2,32 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Napat Karaoke Pro - Display</title>
+    <title>Napat Karaoke Pro — Display</title>
 
-    <!-- PeerJS -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
-    <!-- QRCode -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-    <!-- YouTube IFrame API -->
-    <script src="https://www.youtube.com/iframe_api"></script>
-
     <style>
-        :root {
-            --red: #ff2d55;
-            --pink: #ff375f;
-            --green: #32d74b;
-            --blue: #0a84ff;
-            --orange: #ff9f0a;
-            --purple: #bf5af2;
-            --dark: #050505;
-            --glass: rgba(15,15,18,.72);
-            --border: rgba(255,255,255,.12);
-        }
-
         * {
             box-sizing: border-box;
         }
 
         html,
         body {
+            margin: 0;
+            padding: 0;
             width: 100%;
             height: 100%;
-            margin: 0;
             overflow: hidden;
-            background: #000;
+            background: #050505;
             color: #fff;
             font-family:
+                system-ui,
                 -apple-system,
                 BlinkMacSystemFont,
                 "Segoe UI",
-                Roboto,
-                Arial,
                 sans-serif;
         }
 
@@ -58,53 +39,131 @@
            BACKGROUND
         ========================================================= */
 
-        .background {
+        #background {
             position: fixed;
             inset: 0;
-            z-index: 0;
             overflow: hidden;
-            background:
-                radial-gradient(circle at 20% 20%, #251020, transparent 45%),
-                radial-gradient(circle at 80% 80%, #101c35, transparent 45%),
-                #050505;
+            z-index: 0;
+            background: #050505;
         }
 
         .bg-layer {
             position: absolute;
             inset: 0;
-            background-position: center;
             background-size: cover;
-            background-repeat: no-repeat;
+            background-position: center;
             opacity: 0;
-            transition: opacity 2s ease;
-            filter: brightness(.55) saturate(1.15);
+            transition: opacity 2s ease-in-out;
         }
 
         .bg-layer.active {
             opacity: 1;
         }
 
-        .background::after {
+        #background::after {
             content: "";
             position: absolute;
             inset: 0;
             background:
                 linear-gradient(
                     180deg,
-                    rgba(0,0,0,.35),
-                    rgba(0,0,0,.72)
+                    rgba(0, 0, 0, 0.35),
+                    rgba(0, 0, 0, 0.78)
                 );
             pointer-events: none;
         }
 
         /* =========================================================
-           APP
+           MAIN
         ========================================================= */
 
         #app {
-            position: fixed;
-            inset: 0;
-            z-index: 5;
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* =========================================================
+           TOP BAR
+        ========================================================= */
+
+        #top-bar {
+            position: absolute;
+            top: 22px;
+            left: 28px;
+            right: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 20;
+            transition:
+                opacity 0.5s ease,
+                transform 0.5s ease;
+        }
+
+        #top-bar.hidden {
+            opacity: 0;
+            transform: translateY(-15px);
+            pointer-events: none;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 45, 85, 0.9);
+            box-shadow:
+                0 8px 30px rgba(255, 45, 85, 0.35);
+            font-size: 22px;
+        }
+
+        .brand-text strong {
+            display: block;
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .brand-text span {
+            display: block;
+            margin-top: 2px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.65);
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 10px 15px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.42);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            font-size: 13px;
+        }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #ff2d55;
+            box-shadow: 0 0 12px rgba(255, 45, 85, 0.7);
+        }
+
+        .status-dot.online {
+            background: #32d74b;
+            box-shadow: 0 0 12px rgba(50, 215, 75, 0.7);
         }
 
         /* =========================================================
@@ -115,8 +174,8 @@
             position: absolute;
             inset: 0;
             display: none;
+            z-index: 5;
             background: #000;
-            z-index: 10;
         }
 
         #player {
@@ -129,272 +188,6 @@
         #player iframe {
             width: 100% !important;
             height: 100% !important;
-            border: 0;
-        }
-
-        /* =========================================================
-           TOP BAR
-        ========================================================= */
-
-        #top-ui {
-            position: absolute;
-            top: 22px;
-            left: 25px;
-            right: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 50;
-            pointer-events: none;
-            transition: opacity .4s ease;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 16px;
-            border-radius: 18px;
-            background: var(--glass);
-            border: 1px solid var(--border);
-            backdrop-filter: blur(16px);
-            box-shadow: 0 10px 35px rgba(0,0,0,.35);
-        }
-
-        .brand-icon {
-            width: 40px;
-            height: 40px;
-            display: grid;
-            place-items: center;
-            border-radius: 12px;
-            background: linear-gradient(135deg, var(--red), #ff7a45);
-            font-size: 22px;
-            box-shadow: 0 6px 20px rgba(255,45,85,.35);
-        }
-
-        .brand-title {
-            font-size: 17px;
-            font-weight: 800;
-        }
-
-        .brand-sub {
-            margin-top: 2px;
-            font-size: 11px;
-            color: #aaa;
-        }
-
-        .status-area {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 15px;
-            border-radius: 16px;
-            background: var(--glass);
-            border: 1px solid var(--border);
-            backdrop-filter: blur(16px);
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .status-dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: var(--orange);
-            box-shadow: 0 0 10px currentColor;
-        }
-
-        .status.online .status-dot {
-            background: var(--green);
-        }
-
-        /* =========================================================
-           ROOM QR
-        ========================================================= */
-
-        #qr-panel {
-            position: absolute;
-            right: 25px;
-            bottom: 25px;
-            width: 220px;
-            padding: 15px;
-            z-index: 60;
-            border-radius: 22px;
-            background: rgba(10,10,12,.82);
-            border: 1px solid rgba(255,255,255,.14);
-            backdrop-filter: blur(20px);
-            box-shadow: 0 15px 50px rgba(0,0,0,.55);
-            transition:
-                opacity .4s ease,
-                transform .4s ease;
-        }
-
-        #qr-panel.hidden {
-            opacity: 0;
-            transform: translateY(20px);
-            pointer-events: none;
-        }
-
-        .qr-title {
-            font-size: 13px;
-            font-weight: 800;
-            text-align: center;
-            margin-bottom: 10px;
-            color: #ddd;
-        }
-
-        #qrcode {
-            width: 170px;
-            height: 170px;
-            margin: auto;
-            padding: 8px;
-            background: #fff;
-            border-radius: 12px;
-        }
-
-        #qrcode img {
-            width: 154px !important;
-            height: 154px !important;
-        }
-
-        .room-code {
-            text-align: center;
-            margin-top: 10px;
-            font-size: 12px;
-            color: #999;
-        }
-
-        .room-code strong {
-            display: block;
-            color: #fff;
-            font-size: 17px;
-            letter-spacing: 1px;
-            margin-top: 2px;
-        }
-
-        /* =========================================================
-           QUEUE
-        ========================================================= */
-
-        #queue-panel {
-            position: absolute;
-            top: 95px;
-            left: 25px;
-            width: 360px;
-            max-height: calc(100vh - 145px);
-            z-index: 40;
-            border-radius: 22px;
-            background: rgba(8,8,10,.78);
-            border: 1px solid rgba(255,255,255,.11);
-            backdrop-filter: blur(20px);
-            box-shadow: 0 15px 50px rgba(0,0,0,.45);
-            overflow: hidden;
-            transition:
-                opacity .4s ease,
-                transform .4s ease;
-        }
-
-        #queue-panel.hidden {
-            opacity: 0;
-            transform: translateX(-30px);
-            pointer-events: none;
-        }
-
-        .queue-head {
-            padding: 16px 18px;
-            border-bottom: 1px solid rgba(255,255,255,.09);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .queue-head-title {
-            font-size: 15px;
-            font-weight: 800;
-        }
-
-        .queue-count {
-            min-width: 28px;
-            padding: 4px 8px;
-            text-align: center;
-            border-radius: 20px;
-            background: rgba(50,215,75,.12);
-            color: var(--green);
-            font-size: 12px;
-            font-weight: 800;
-        }
-
-        #queue-list {
-            padding: 10px;
-            max-height: calc(100vh - 210px);
-            overflow-y: auto;
-        }
-
-        .queue-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 11px;
-            margin-bottom: 7px;
-            border-radius: 14px;
-            background: rgba(255,255,255,.045);
-            border: 1px solid rgba(255,255,255,.06);
-        }
-
-        .queue-item.playing {
-            background: rgba(50,215,75,.10);
-            border-color: rgba(50,215,75,.35);
-        }
-
-        .queue-number {
-            width: 30px;
-            height: 30px;
-            display: grid;
-            place-items: center;
-            flex-shrink: 0;
-            border-radius: 9px;
-            background: rgba(255,255,255,.08);
-            color: #aaa;
-            font-size: 12px;
-            font-weight: 800;
-        }
-
-        .playing .queue-number {
-            background: var(--green);
-            color: #000;
-        }
-
-        .queue-info {
-            min-width: 0;
-            flex: 1;
-        }
-
-        .queue-status {
-            color: var(--green);
-            font-size: 10px;
-            font-weight: 800;
-            margin-bottom: 3px;
-        }
-
-        .queue-title {
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .queue-empty {
-            padding: 30px 15px;
-            text-align: center;
-            color: #666;
-            font-size: 13px;
         }
 
         /* =========================================================
@@ -403,32 +196,224 @@
 
         #now-playing {
             position: absolute;
-            left: 50%;
-            bottom: 30px;
-            transform: translateX(-50%);
-            max-width: 55%;
-            padding: 13px 22px;
-            z-index: 45;
+            left: 28px;
+            bottom: 28px;
+            max-width: min(60vw, 760px);
+            padding: 15px 20px;
             border-radius: 18px;
-            background: rgba(8,8,10,.78);
-            border: 1px solid rgba(255,255,255,.11);
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(18px);
-            text-align: center;
-            transition: opacity .4s ease;
+            -webkit-backdrop-filter: blur(18px);
+            z-index: 15;
+            transition:
+                opacity 0.5s ease,
+                transform 0.5s ease;
         }
 
-        #now-playing-title {
-            font-size: 17px;
+        #now-playing.hidden {
+            opacity: 0;
+            transform: translateY(15px);
+            pointer-events: none;
+        }
+
+        .now-label {
+            font-size: 11px;
+            color: #ff6a00;
             font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        #now-title {
+            font-size: 23px;
+            font-weight: 800;
+            line-height: 1.25;
+        }
+
+        #now-channel {
+            margin-top: 5px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.62);
+        }
+
+        /* =========================================================
+           QUEUE
+        ========================================================= */
+
+        #queue-box {
+            position: absolute;
+            right: 28px;
+            bottom: 28px;
+            width: 330px;
+            max-height: 55vh;
+            padding: 17px;
+            border-radius: 22px;
+            background: rgba(0, 0, 0, 0.52);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 15;
+            transition:
+                opacity 0.5s ease,
+                transform 0.5s ease;
+        }
+
+        #queue-box.hidden {
+            opacity: 0;
+            transform: translateY(15px);
+            pointer-events: none;
+        }
+
+        .queue-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .queue-title {
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .queue-count {
+            min-width: 27px;
+            height: 27px;
+            padding: 0 8px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 45, 85, 0.2);
+            color: #ff6a00;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        #queue-list {
+            max-height: calc(55vh - 65px);
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+
+        .queue-item {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 9px;
+            margin-bottom: 7px;
+            border-radius: 13px;
+            background: rgba(255, 255, 255, 0.055);
+        }
+
+        .queue-item.playing {
+            background: rgba(255, 45, 85, 0.16);
+            border: 1px solid rgba(255, 45, 85, 0.25);
+        }
+
+        .queue-thumb {
+            width: 58px;
+            height: 38px;
+            object-fit: cover;
+            border-radius: 8px;
+            flex-shrink: 0;
+            background: #222;
+        }
+
+        .queue-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .queue-name {
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
             overflow: hidden;
+        }
+
+        .queue-sub {
+            margin-top: 3px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.5);
             white-space: nowrap;
+            overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        #now-playing-sub {
+        .playing-badge {
+            font-size: 9px;
+            color: #ff6a00;
+            font-weight: 800;
             margin-top: 3px;
-            color: #999;
-            font-size: 11px;
+        }
+
+        /* =========================================================
+           QR PANEL
+        ========================================================= */
+
+        #qr-panel {
+            position: absolute;
+            top: 90px;
+            right: 28px;
+            width: 210px;
+            padding: 15px;
+            border-radius: 22px;
+            background: rgba(0, 0, 0, 0.58);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 18;
+            text-align: center;
+            transition:
+                opacity 0.5s ease,
+                transform 0.5s ease;
+        }
+
+        #qr-panel.hidden {
+            opacity: 0;
+            transform: translateY(-10px) scale(0.96);
+            pointer-events: none;
+        }
+
+        #qrcode {
+            width: 170px;
+            height: 170px;
+            margin: 0 auto 10px;
+            padding: 6px;
+            background: #fff;
+            border-radius: 12px;
+        }
+
+        #qrcode img {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .qr-title {
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .room-code {
+            margin-top: 5px;
+            color: #ff6a00;
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .qr-hint {
+            margin-top: 6px;
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 10px;
+            line-height: 1.4;
         }
 
         /* =========================================================
@@ -438,61 +423,62 @@
         #start-overlay {
             position: fixed;
             inset: 0;
-            z-index: 200;
+            z-index: 100;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             background:
                 radial-gradient(
                     circle at center,
-                    rgba(255,45,85,.18),
-                    rgba(0,0,0,.94) 55%
+                    rgba(255, 45, 85, 0.16),
+                    rgba(0, 0, 0, 0.96) 55%
                 );
-        }
-
-        .start-box {
-            width: min(500px, 90%);
-            padding: 45px 30px;
-            text-align: center;
-            border-radius: 30px;
-            background: rgba(15,15,18,.88);
-            border: 1px solid rgba(255,255,255,.12);
-            backdrop-filter: blur(25px);
-            box-shadow: 0 25px 100px rgba(0,0,0,.65);
-        }
-
-        .start-mic {
-            font-size: 64px;
-            margin-bottom: 15px;
-            filter: drop-shadow(0 8px 25px rgba(255,45,85,.45));
-        }
-
-        .start-title {
-            font-size: 32px;
-            font-weight: 900;
-        }
-
-        .start-sub {
-            margin-top: 8px;
-            color: #999;
-            font-size: 14px;
-        }
-
-        .btn-start {
-            margin-top: 30px;
-            padding: 16px 38px;
-            border: 0;
-            border-radius: 50px;
-            background: linear-gradient(135deg, var(--red), #ff6b45);
-            color: #fff;
-            font-size: 17px;
-            font-weight: 900;
             cursor: pointer;
-            box-shadow: 0 10px 35px rgba(255,45,85,.35);
         }
 
-        .btn-start:active {
-            transform: scale(.97);
+        .start-card {
+            width: min(90vw, 480px);
+            padding: 38px;
+            border-radius: 28px;
+            text-align: center;
+            background: rgba(20, 20, 20, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 30px 100px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+        }
+
+        .start-icon {
+            font-size: 58px;
+            margin-bottom: 15px;
+        }
+
+        .start-card h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        .start-card p {
+            margin: 12px 0 25px;
+            color: rgba(255, 255, 255, 0.58);
+            line-height: 1.5;
+        }
+
+        .start-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 210px;
+            padding: 14px 24px;
+            border: 0;
+            border-radius: 999px;
+            background: #ff2d55;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow:
+                0 12px 35px rgba(255, 45, 85, 0.35);
         }
 
         /* =========================================================
@@ -502,61 +488,110 @@
         #score-overlay {
             position: fixed;
             inset: 0;
-            z-index: 180;
+            z-index: 80;
             display: none;
-            place-items: center;
-            background: rgba(0,0,0,.75);
-            backdrop-filter: blur(15px);
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            background:
+                radial-gradient(
+                    circle,
+                    rgba(255, 106, 0, 0.16),
+                    transparent 55%
+                );
         }
 
-        .score-box {
+        #score-overlay.show {
+            display: flex;
+        }
+
+        .score-card {
             text-align: center;
-            padding: 45px;
-            border-radius: 35px;
-            background: rgba(20,20,24,.92);
-            border: 1px solid rgba(255,255,255,.12);
-            box-shadow: 0 25px 100px rgba(0,0,0,.65);
-            animation: scoreIn .5s ease;
-        }
-
-        @keyframes scoreIn {
-            from {
-                transform: scale(.7);
-                opacity: 0;
-            }
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
+            animation: scorePop 0.7s ease;
         }
 
         .score-label {
-            color: #aaa;
-            font-size: 14px;
-            font-weight: 700;
+            font-size: 22px;
+            font-weight: 800;
         }
 
-        #score-val {
-            margin: 8px 0;
-            font-size: 100px;
-            line-height: 1;
+        .score-number {
+            margin-top: 8px;
+            font-size: clamp(90px, 15vw, 180px);
+            line-height: 0.95;
             font-weight: 1000;
-            color: var(--green);
-            text-shadow: 0 0 40px rgba(50,215,75,.35);
+            color: #ff6a00;
+            text-shadow:
+                0 0 25px rgba(255, 106, 0, 0.45),
+                0 0 80px rgba(255, 45, 85, 0.3);
         }
 
-        #score-msg {
-            font-size: 24px;
+        .score-message {
+            margin-top: 10px;
+            font-size: 26px;
             font-weight: 900;
         }
 
+        @keyframes scorePop {
+            0% {
+                opacity: 0;
+                transform: scale(0.6);
+            }
+
+            60% {
+                opacity: 1;
+                transform: scale(1.08);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
         /* =========================================================
-           MOBILE / SMALL SCREEN
+           EMPTY STATE
+        ========================================================= */
+
+        #empty-state {
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        .empty-content {
+            margin-top: -5vh;
+            padding: 30px;
+        }
+
+        .empty-icon {
+            font-size: 70px;
+            filter: drop-shadow(0 10px 30px rgba(255, 45, 85, 0.25));
+        }
+
+        .empty-title {
+            margin-top: 12px;
+            font-size: 30px;
+            font-weight: 900;
+        }
+
+        .empty-text {
+            margin-top: 8px;
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 15px;
+        }
+
+        /* =========================================================
+           RESPONSIVE
         ========================================================= */
 
         @media (max-width: 900px) {
-            #queue-panel {
-                width: 300px;
+            #queue-box {
+                width: 280px;
             }
 
             #qr-panel {
@@ -568,9 +603,47 @@
                 height: 150px;
             }
 
-            #qrcode img {
-                width: 134px !important;
-                height: 134px !important;
+            #now-title {
+                font-size: 18px;
+            }
+        }
+
+        @media (max-width: 650px) {
+            #top-bar {
+                left: 14px;
+                right: 14px;
+                top: 14px;
+            }
+
+            #queue-box {
+                right: 14px;
+                left: 14px;
+                bottom: 14px;
+                width: auto;
+                max-height: 35vh;
+            }
+
+            #queue-list {
+                max-height: calc(35vh - 65px);
+            }
+
+            #now-playing {
+                left: 14px;
+                bottom: calc(35vh + 30px);
+                max-width: calc(100vw - 28px);
+            }
+
+            #qr-panel {
+                right: 14px;
+                top: 72px;
+            }
+
+            .brand-text {
+                display: none;
+            }
+
+            .status {
+                font-size: 11px;
             }
         }
     </style>
@@ -578,821 +651,1017 @@
 
 <body>
 
-<div class="background">
-    <div id="bg1" class="bg-layer active"></div>
-    <div id="bg2" class="bg-layer"></div>
-</div>
+    <!-- =========================================================
+         BACKGROUND
+    ========================================================== -->
 
-<div id="app">
-
-    <!-- TOP -->
-    <div id="top-ui">
-
-        <div class="brand">
-            <div class="brand-icon">🎤</div>
-            <div>
-                <div class="brand-title">Napat Karaoke Pro</div>
-                <div class="brand-sub">Karaoke Display</div>
-            </div>
-        </div>
-
-        <div class="status-area">
-
-            <div id="peer-status" class="status">
-                <span class="status-dot"></span>
-                <span id="peer-status-text">กำลังเชื่อมต่อ</span>
-            </div>
-
-        </div>
+    <div id="background">
+        <div class="bg-layer active" id="bg1"></div>
+        <div class="bg-layer" id="bg2"></div>
     </div>
 
-    <!-- QUEUE -->
-    <div id="queue-panel">
+    <div id="app">
 
-        <div class="queue-head">
-            <div class="queue-head-title">
-                🎶 คิวเพลง
+        <!-- =====================================================
+             PLAYER
+        ====================================================== -->
+
+        <div id="player-wrapper">
+            <div id="player"></div>
+        </div>
+
+        <!-- =====================================================
+             TOP BAR
+        ====================================================== -->
+
+        <div id="top-bar">
+
+            <div class="brand">
+                <div class="brand-icon">🎤</div>
+
+                <div class="brand-text">
+                    <strong>Napat Karaoke Pro</strong>
+                    <span>TV Display</span>
+                </div>
             </div>
 
-            <div id="queue-count" class="queue-count">
-                0
+            <div class="status">
+                <span
+                    id="status-dot"
+                    class="status-dot"
+                ></span>
+
+                <span id="status-text">
+                    กำลังเริ่มระบบ...
+                </span>
             </div>
+
         </div>
 
-        <div id="queue-list">
-            <div class="queue-empty">
-                ยังไม่มีเพลงในคิว
+        <!-- =====================================================
+             QR
+        ====================================================== -->
+
+        <div id="qr-panel">
+
+            <div id="qrcode"></div>
+
+            <div class="qr-title">
+                📱 สแกนเพื่อจองเพลง
             </div>
+
+            <div
+                id="room-code"
+                class="room-code"
+            >
+                -
+            </div>
+
+            <div class="qr-hint">
+                เปิดกล้องมือถือแล้วสแกน QR
+            </div>
+
+        </div>
+
+        <!-- =====================================================
+             EMPTY
+        ====================================================== -->
+
+        <div id="empty-state">
+
+            <div class="empty-content">
+
+                <div class="empty-icon">
+                    🎤
+                </div>
+
+                <div class="empty-title">
+                    พร้อมร้องแล้วหรือยัง?
+                </div>
+
+                <div class="empty-text">
+                    สแกน QR Code เพื่อค้นหาและจองเพลง
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- =====================================================
+             NOW PLAYING
+        ====================================================== -->
+
+        <div id="now-playing">
+
+            <div class="now-label">
+                NOW PLAYING
+            </div>
+
+            <div id="now-title">
+                -
+            </div>
+
+            <div id="now-channel">
+                -
+            </div>
+
+        </div>
+
+        <!-- =====================================================
+             QUEUE
+        ====================================================== -->
+
+        <div id="queue-box">
+
+            <div class="queue-header">
+
+                <div class="queue-title">
+                    🎶 คิวเพลง
+                </div>
+
+                <div
+                    id="queue-count"
+                    class="queue-count"
+                >
+                    0
+                </div>
+
+            </div>
+
+            <div id="queue-list"></div>
+
         </div>
 
     </div>
 
-    <!-- PLAYER -->
-    <div id="player-wrapper">
-        <div id="player"></div>
-    </div>
+    <!-- =========================================================
+         START
+    ========================================================== -->
 
-    <!-- NOW PLAYING -->
-    <div id="now-playing">
+    <div id="start-overlay">
 
-        <div id="now-playing-title">
-            ยังไม่มีเพลง
-        </div>
+        <div class="start-card">
 
-        <div id="now-playing-sub">
-            สแกน QR เพื่อเพิ่มเพลง
-        </div>
+            <div class="start-icon">
+                🎤
+            </div>
 
-    </div>
+            <h1>
+                Napat Karaoke Pro
+            </h1>
 
-    <!-- QR -->
-    <div id="qr-panel">
+            <p>
+                กดเริ่มเพื่อเปิดระบบคาราโอเกะบน TV
+            </p>
 
-        <div class="qr-title">
-            📱 สแกนเพื่อควบคุมและเลือกเพลง
-        </div>
+            <button
+                class="start-button"
+                onclick="initApp()"
+            >
+                ▶ เริ่มใช้งาน
+            </button>
 
-        <div id="qrcode"></div>
-
-        <div class="room-code">
-            ROOM
-            <strong id="room-code">----</strong>
         </div>
 
     </div>
 
-</div>
+    <!-- =========================================================
+         SCORE
+    ========================================================== -->
 
-<!-- START -->
-<div id="start-overlay">
+    <div id="score-overlay">
 
-    <div class="start-box">
+        <div class="score-card">
 
-        <div class="start-mic">🎤</div>
+            <div class="score-label">
+                🎤 คะแนนเพลงนี้
+            </div>
 
-        <div class="start-title">
-            Napat Karaoke Pro
-        </div>
+            <div
+                id="score-number"
+                class="score-number"
+            >
+                95
+            </div>
 
-        <div class="start-sub">
-            กดเริ่มเพื่อเปิดระบบคาราโอเกะ
-        </div>
+            <div
+                id="score-message"
+                class="score-message"
+            >
+                สุดยอด! 🔥
+            </div>
 
-        <button class="btn-start" onclick="initApp()">
-            🎤 เริ่มความมันส์!
-        </button>
-
-    </div>
-
-</div>
-
-<!-- SCORE -->
-<div id="score-overlay">
-
-    <div class="score-box">
-
-        <div class="score-label">
-            คะแนนการร้อง
-        </div>
-
-        <div id="score-val">
-            95
-        </div>
-
-        <div id="score-msg">
-            สุดยอด!
         </div>
 
     </div>
 
-</div>
+    <!-- =========================================================
+         YOUTUBE API
+    ========================================================== -->
 
-<script>
+    <script>
+        let tag = document.createElement("script");
 
-    /* =========================================================
-       STATE
-    ========================================================= */
+        tag.src =
+            "https://www.youtube.com/iframe_api";
 
-    let peer = null;
-    let connObj = null;
+        document.head.appendChild(tag);
+    </script>
 
-    let currentRoom = "";
-    let queue = [];
+    <script>
+        /* =========================================================
+           STATE
+        ========================================================= */
 
-    let player = null;
+        let peer = null;
+        let connObj = null;
 
-    let isAppReady = false;
-    let isEnding = false;
+        let currentRoom = "";
 
-    let uiTimer = null;
-    let checkInterval = null;
+        let queue = [];
 
-    let bgTimer = null;
-    let bgIndex = 0;
-    let activeBg = 1;
+        let player = null;
 
-    /* =========================================================
-       ROOM
-    ========================================================= */
+        let isAppReady = false;
+        let isEnding = false;
 
-    function initRoom() {
+        let uiTimer = null;
+        let scoreTimer = null;
 
-        const params = new URLSearchParams(window.location.search);
+        let bgTimer = null;
+        let bgIndex = 0;
+        let activeBg = 1;
 
-        const urlRoom =
-            params.get("room") ||
-            params.get("r");
+        /* =========================================================
+           BACKGROUNDS
+        ========================================================= */
 
-        const savedRoom =
-            sessionStorage.getItem("k_room");
+        const backgrounds = [
+            "https://picsum.photos/1920/1080?random=101",
+            "https://picsum.photos/1920/1080?random=102",
+            "https://picsum.photos/1920/1080?random=103",
+            "https://picsum.photos/1920/1080?random=104",
+            "https://picsum.photos/1920/1080?random=105"
+        ];
 
-        if (urlRoom) {
+        /* =========================================================
+           ROOM
+        ========================================================= */
 
-            currentRoom =
-                urlRoom.toLowerCase();
+        function initRoom() {
 
-        } else if (savedRoom) {
+            const params =
+                new URLSearchParams(
+                    window.location.search
+                );
 
-            currentRoom = savedRoom;
+            const urlRoom =
+                params.get("room") ||
+                params.get("r");
 
-        } else {
+            const savedRoom =
+                sessionStorage.getItem("k_room");
 
-            currentRoom =
-                "room_" +
-                Math.random()
-                    .toString(36)
-                    .substring(2, 7);
+            if (urlRoom) {
 
-            sessionStorage.setItem(
-                "k_room",
-                currentRoom
-            );
+                currentRoom =
+                    urlRoom.toLowerCase();
+
+            } else if (savedRoom) {
+
+                currentRoom = savedRoom;
+
+            } else {
+
+                currentRoom =
+                    "room_" +
+                    Math.random()
+                        .toString(36)
+                        .substring(2, 7);
+
+                sessionStorage.setItem(
+                    "k_room",
+                    currentRoom
+                );
+            }
+
+            document.getElementById(
+                "room-code"
+            ).innerText = currentRoom;
+
+            createQRCode();
         }
 
-        document.getElementById(
-            "room-code"
-        ).innerText = currentRoom;
+        /* =========================================================
+           QR
+        ========================================================= */
 
-        createQRCode();
-    }
+        function createQRCode() {
 
-    /* =========================================================
-       QR
-    ========================================================= */
+            const qr =
+                document.getElementById(
+                    "qrcode"
+                );
 
-    function createQRCode() {
+            qr.innerHTML = "";
 
-        const box =
-            document.getElementById("qrcode");
+            new QRCode(qr, {
+                text:
+                    `${window.location.origin}/controller.html?room=${encodeURIComponent(currentRoom)}`,
+                width: 170,
+                height: 170,
+                correctLevel:
+                    QRCode.CorrectLevel.M
+            });
+        }
 
-        box.innerHTML = "";
+        /* =========================================================
+           PEERJS
+        ========================================================= */
 
-        const controllerUrl =
-            `${window.location.origin}/controller.html?room=${encodeURIComponent(currentRoom)}`;
-
-        new QRCode(box, {
-
-            text: controllerUrl,
-
-            width: 170,
-            height: 170,
-
-            correctLevel:
-                QRCode.CorrectLevel.M
-
-        });
-    }
-
-    /* =========================================================
-       PEERJS HOST
-    ========================================================= */
-
-    function initPeer() {
-
-        setPeerStatus(
-            "กำลังเชื่อมต่อ",
-            false
-        );
-
-        peer = new Peer(currentRoom);
-
-        peer.on("open", id => {
-
-            console.log(
-                "PeerJS Host:",
-                id
-            );
+        function initPeer() {
 
             setPeerStatus(
-                "พร้อมใช้งาน",
-                true
-            );
-
-        });
-
-        peer.on("connection", conn => {
-
-            console.log(
-                "Controller connected:",
-                conn.peer
-            );
-
-            connObj = conn;
-
-            conn.on("open", () => {
-
-                console.log(
-                    "Controller connection opened"
-                );
-
-                setPeerStatus(
-                    "มือถือเชื่อมต่อแล้ว",
-                    true
-                );
-
-                syncQueue();
-
-            });
-
-            conn.on("data", handleCommand);
-
-            conn.on("close", () => {
-
-                if (connObj === conn) {
-
-                    connObj = null;
-
-                    setPeerStatus(
-                        "รอมือถือ",
-                        false
-                    );
-
-                }
-
-            });
-
-            conn.on("error", error => {
-
-                console.error(
-                    "Peer connection error:",
-                    error
-                );
-
-            });
-
-        });
-
-        peer.on("error", error => {
-
-            console.error(
-                "PeerJS error:",
-                error
-            );
-
-            setPeerStatus(
-                "กำลังเชื่อมต่อใหม่",
+                "กำลังเชื่อมต่อ...",
                 false
             );
 
-            setTimeout(() => {
+            peer = new Peer(currentRoom);
 
-                if (!connObj) {
+            peer.on("open", () => {
+
+                setPeerStatus(
+                    "พร้อมใช้งาน",
+                    true
+                );
+
+            });
+
+            peer.on("connection", conn => {
+
+                connObj = conn;
+
+                conn.on("open", () => {
+
+                    setPeerStatus(
+                        "มือถือเชื่อมต่อแล้ว",
+                        true
+                    );
+
+                    syncQueue();
+
+                });
+
+                conn.on("data", data => {
+
+                    handleCommand(data);
+
+                });
+
+                conn.on("close", () => {
+
+                    if (connObj === conn) {
+
+                        connObj = null;
+
+                        setPeerStatus(
+                            "รอมือถือ",
+                            false
+                        );
+                    }
+                });
+
+                conn.on("error", error => {
+
+                    console.error(
+                        "Peer connection error:",
+                        error
+                    );
+
+                });
+
+            });
+
+            peer.on("error", error => {
+
+                console.error(
+                    "Peer error:",
+                    error
+                );
+
+                setPeerStatus(
+                    "กำลังเชื่อมต่อใหม่...",
+                    false
+                );
+
+                setTimeout(() => {
 
                     try {
-                        peer.destroy();
-                    } catch {}
+                        if (peer) {
+                            peer.destroy();
+                        }
+                    } catch (e) {}
 
                     initPeer();
 
-                }
+                }, 3000);
 
-            }, 3000);
-
-        });
-
-    }
-
-    /* =========================================================
-       PEER COMMANDS
-    ========================================================= */
-
-    function handleCommand(data) {
-
-        if (!data || !data.type) {
-            return;
+            });
         }
 
-        console.log(
-            "Command:",
-            data
-        );
+        /* =========================================================
+           STATUS
+        ========================================================= */
 
-        switch (data.type) {
+        function setPeerStatus(
+            text,
+            online
+        ) {
 
-            case "ADD_SONG":
+            document.getElementById(
+                "status-text"
+            ).innerText = text;
 
-                if (data.song) {
+            const dot =
+                document.getElementById(
+                    "status-dot"
+                );
+
+            dot.classList.toggle(
+                "online",
+                online
+            );
+        }
+
+        /* =========================================================
+           COMMAND
+        ========================================================= */
+
+        function handleCommand(data) {
+
+            if (!data || !data.type) {
+                return;
+            }
+
+            switch (data.type) {
+
+                case "ADD_SONG":
 
                     addSongFromController(
                         data.song
                     );
 
-                }
+                    break;
 
-                break;
+                case "SKIP":
 
-            case "SKIP":
+                    skipSong();
 
-                skipSong();
+                    break;
 
-                break;
+                case "TOGGLE_PLAY":
 
-            case "TOGGLE_PLAY":
+                    togglePlayFromController(
+                        data.isPaused
+                    );
 
-                togglePlayFromController(
-                    data.isPaused
-                );
+                    break;
 
-                break;
+                case "DELETE_SONG":
 
-            case "DELETE_SONG":
+                    deleteSong(
+                        data.index
+                    );
 
-                deleteSong(
-                    data.index
-                );
+                    break;
 
-                break;
+                case "MOVE_SONG":
 
-            case "MOVE_SONG":
+                    moveSong(
+                        data.index,
+                        data.direction
+                    );
 
-                moveSong(
-                    data.index,
-                    data.direction
-                );
+                    break;
 
-                break;
+                case "RETRY_PLAY":
 
-            case "RETRY_PLAY":
+                    retryPlay();
 
-                retryPlay();
+                    break;
 
-                break;
+                default:
 
+                    console.log(
+                        "Unknown command:",
+                        data.type
+                    );
+            }
         }
 
-    }
+        /* =========================================================
+           ADD SONG
+        ========================================================= */
 
-    /* =========================================================
-       STATUS
-    ========================================================= */
+        function addSongFromController(song) {
 
-    function setPeerStatus(
-        text,
-        online
-    ) {
-
-        const status =
-            document.getElementById(
-                "peer-status"
-            );
-
-        const label =
-            document.getElementById(
-                "peer-status-text"
-            );
-
-        label.innerText = text;
-
-        if (online) {
-
-            status.classList.add(
-                "online"
-            );
-
-        } else {
-
-            status.classList.remove(
-                "online"
-            );
-
-        }
-
-    }
-
-    /* =========================================================
-       QUEUE
-    ========================================================= */
-
-    function addSongFromController(song) {
-
-        if (!song.videoId) {
-            return;
-        }
-
-        /*
-         * ป้องกันเพลงซ้ำ
-         */
-
-        if (
-            queue.some(
-                s =>
-                    s.videoId ===
-                    song.videoId
-            )
-        ) {
-
-            return;
-
-        }
-
-        queue.push(song);
-
-        syncQueue();
-
-        /*
-         * ถ้าเป็นเพลงแรก
-         * ให้เริ่มเล่นทันที
-         */
-
-        if (
-            queue.length === 1 &&
-            isAppReady
-        ) {
-
-            playCurrent();
-
-        }
-
-    }
-
-    function deleteSong(index) {
-
-        if (
-            index < 0 ||
-            index >= queue.length
-        ) {
-            return;
-        }
-
-        const wasPlaying =
-            index === 0;
-
-        queue.splice(
-            index,
-            1
-        );
-
-        syncQueue();
-
-        if (wasPlaying) {
-
-            isEnding = false;
-
-            playCurrent();
-
-        }
-
-    }
-
-    function moveSong(
-        index,
-        direction
-    ) {
-
-        const target =
-            direction === "up"
-                ? index - 1
-                : index + 1;
-
-        /*
-         * ห้ามเลื่อนเพลงที่กำลังเล่น
-         */
-
-        if (
-            target < 1 ||
-            target >= queue.length
-        ) {
-
-            return;
-
-        }
-
-        const temp =
-            queue[index];
-
-        queue[index] =
-            queue[target];
-
-        queue[target] =
-            temp;
-
-        syncQueue();
-
-    }
-
-    function syncQueue() {
-
-        updateQueueUI();
-
-        if (
-            connObj &&
-            connObj.open
-        ) {
-
-            try {
-
-                connObj.send({
-
-                    type:
-                        "QUEUE_UPDATE",
-
-                    queue:
-                        queue
-
-                });
-
-            } catch (error) {
-
-                console.error(
-                    error
-                );
-
+            if (!song || !song.videoId) {
+                return;
             }
 
+            /*
+             * ป้องกันเพลงซ้ำ
+             */
+
+            if (
+                queue.some(
+                    item =>
+                        item.videoId ===
+                        song.videoId
+                )
+            ) {
+
+                syncQueue();
+
+                return;
+            }
+
+            queue.push(song);
+
+            syncQueue();
+
+            if (
+                queue.length === 1 &&
+                isAppReady
+            ) {
+
+                playCurrent();
+
+            }
         }
 
-    }
+        /* =========================================================
+           SYNC QUEUE
+        ========================================================= */
 
-    /* =========================================================
-       QUEUE UI
-    ========================================================= */
+        function syncQueue() {
 
-    function updateQueueUI() {
+            updateQueueUI();
 
-        const list =
-            document.getElementById(
-                "queue-list"
-            );
+            if (
+                connObj &&
+                connObj.open
+            ) {
 
-        const count =
-            document.getElementById(
-                "queue-count"
-            );
+                try {
 
-        count.innerText =
-            queue.length;
+                    connObj.send({
+                        type:
+                            "QUEUE_UPDATE",
+                        queue:
+                            queue
+                    });
 
-        if (queue.length === 0) {
+                } catch (error) {
 
-            list.innerHTML = `
-                <div class="queue-empty">
-                    🎵 ยังไม่มีเพลงในคิว
-                </div>
-            `;
+                    console.error(
+                        "Queue sync error:",
+                        error
+                    );
 
-            return;
-
+                }
+            }
         }
 
-        list.innerHTML =
-            queue.map(
-                (song, index) => `
+        /* =========================================================
+           QUEUE UI
+        ========================================================= */
 
-                <div class="queue-item ${
-                    index === 0
-                        ? "playing"
-                        : ""
-                }">
+        function updateQueueUI() {
 
-                    <div class="queue-number">
-                        ${
-                            index === 0
-                                ? "▶"
-                                : index + 1
-                        }
-                    </div>
+            const list =
+                document.getElementById(
+                    "queue-list"
+                );
 
-                    <div class="queue-info">
+            const count =
+                document.getElementById(
+                    "queue-count"
+                );
 
-                        ${
-                            index === 0
-                                ? `
-                                <div class="queue-status">
-                                    กำลังเล่น
-                                </div>
-                                `
-                                : ""
-                        }
+            count.innerText =
+                queue.length;
 
-                        <div class="queue-title">
-                            ${escapeHtml(
-                                song.title || "ไม่ทราบชื่อ"
-                            )}
-                        </div>
+            list.innerHTML = "";
 
-                    </div>
+            if (queue.length === 0) {
 
-                </div>
-            `
-            )
-            .join("");
+                document.getElementById(
+                    "queue-box"
+                ).style.display = "none";
 
-        /*
-         * อัปเดต Now Playing
-         */
+                document.getElementById(
+                    "now-playing"
+                ).classList.add("hidden");
 
-        if (queue.length > 0) {
+                document.getElementById(
+                    "empty-state"
+                ).style.display = "flex";
+
+                return;
+            }
+
+            document.getElementById(
+                "queue-box"
+            ).style.display = "block";
+
+            document.getElementById(
+                "empty-state"
+            ).style.display = "none";
 
             const current =
                 queue[0];
 
             document.getElementById(
-                "now-playing-title"
-            ).innerText =
-                current.title ||
-                "กำลังเล่น";
+                "now-playing"
+            ).classList.remove("hidden");
 
             document.getElementById(
-                "now-playing-sub"
+                "now-title"
             ).innerText =
-                current.channel ||
-                current.author ||
-                "Napat Karaoke Pro";
-
-        } else {
+                current.title || "ไม่ทราบชื่อเพลง";
 
             document.getElementById(
-                "now-playing-title"
+                "now-channel"
             ).innerText =
-                "ยังไม่มีเพลง";
+                current.channel || "";
 
-            document.getElementById(
-                "now-playing-sub"
-            ).innerText =
-                "สแกน QR เพื่อเพิ่มเพลง";
+            queue.forEach(
+                (song, index) => {
 
-        }
-
-    }
-
-    /* =========================================================
-       YOUTUBE
-    ========================================================= */
-
-    function onYouTubeIframeAPIReady() {
-
-        player = new YT.Player(
-            "player",
-            {
-
-                height: "100%",
-                width: "100%",
-
-                playerVars: {
-
-                    autoplay: 1,
-
-                    controls: 0,
-
-                    modestbranding: 1,
-
-                    rel: 0,
-
-                    iv_load_policy: 3,
-
-                    cc_load_policy: 0,
-
-                    playsinline: 1,
-
-                    origin:
-                        window.location.origin
-
-                },
-
-                events: {
-
-                    onReady: () => {
-
-                        console.log(
-                            "YouTube player ready"
+                    const item =
+                        document.createElement(
+                            "div"
                         );
 
-                    },
+                    item.className =
+                        "queue-item" +
+                        (index === 0
+                            ? " playing"
+                            : "");
 
-                    onStateChange:
-                        handlePlayerState
+                    const thumb =
+                        document.createElement(
+                            "img"
+                        );
+
+                    thumb.className =
+                        "queue-thumb";
+
+                    thumb.src =
+                        song.thumbnail ||
+                        `https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`;
+
+                    thumb.onerror = () => {
+
+                        thumb.src =
+                            `https://i.ytimg.com/vi/${song.videoId}/hqdefault.jpg`;
+
+                    };
+
+                    const info =
+                        document.createElement(
+                            "div"
+                        );
+
+                    info.className =
+                        "queue-info";
+
+                    const name =
+                        document.createElement(
+                            "div"
+                        );
+
+                    name.className =
+                        "queue-name";
+
+                    name.innerText =
+                        song.title ||
+                        "ไม่ทราบชื่อเพลง";
+
+                    const sub =
+                        document.createElement(
+                            "div"
+                        );
+
+                    sub.className =
+                        "queue-sub";
+
+                    sub.innerText =
+                        song.channel ||
+                        "";
+
+                    info.appendChild(name);
+                    info.appendChild(sub);
+
+                    if (index === 0) {
+
+                        const badge =
+                            document.createElement(
+                                "div"
+                            );
+
+                        badge.className =
+                            "playing-badge";
+
+                        badge.innerText =
+                            "▶ กำลังเล่น";
+
+                        info.appendChild(
+                            badge
+                        );
+                    }
+
+                    item.appendChild(thumb);
+                    item.appendChild(info);
+
+                    list.appendChild(item);
+                }
+            );
+        }
+
+        /* =========================================================
+           DELETE
+        ========================================================= */
+
+        function deleteSong(index) {
+
+            if (
+                index < 0 ||
+                index >= queue.length
+            ) {
+                return;
+            }
+
+            const wasCurrent =
+                index === 0;
+
+            queue.splice(index, 1);
+
+            syncQueue();
+
+            if (wasCurrent) {
+
+                if (queue.length > 0) {
+
+                    playCurrent();
+
+                } else {
+
+                    showIdleScreen();
+
+                }
+            }
+        }
+
+        /* =========================================================
+           MOVE
+        ========================================================= */
+
+        function moveSong(
+            index,
+            direction
+        ) {
+
+            const target =
+                direction === "up"
+                    ? index - 1
+                    : index + 1;
+
+            /*
+             * ห้ามย้ายเพลงที่กำลังเล่น
+             */
+
+            if (
+                index <= 0 ||
+                target <= 0 ||
+                target >= queue.length
+            ) {
+                return;
+            }
+
+            const temp =
+                queue[index];
+
+            queue[index] =
+                queue[target];
+
+            queue[target] =
+                temp;
+
+            syncQueue();
+        }
+
+        /* =========================================================
+           SKIP
+        ========================================================= */
+
+        function skipSong() {
+
+            if (queue.length === 0) {
+                return;
+            }
+
+            isEnding = true;
+
+            hideScore();
+
+            queue.shift();
+
+            syncQueue();
+
+            if (queue.length > 0) {
+
+                playCurrent();
+
+            } else {
+
+                showIdleScreen();
+
+            }
+        }
+
+        /* =========================================================
+           TOGGLE PLAY
+        ========================================================= */
+
+        function togglePlayFromController(
+            shouldPause
+        ) {
+
+            if (
+                !player ||
+                typeof player.getPlayerState !==
+                    "function"
+            ) {
+                return;
+            }
+
+            try {
+
+                if (shouldPause) {
+
+                    player.pauseVideo();
+
+                    showUI();
+
+                } else {
+
+                    player.playVideo();
+
+                    scheduleHideUI();
 
                 }
 
+            } catch (error) {
+
+                console.error(
+                    "Toggle play error:",
+                    error
+                );
             }
-        );
+        }
 
-    }
+        /* =========================================================
+           RETRY
+        ========================================================= */
 
-    function handlePlayerState(e) {
+        function retryPlay() {
 
-        if (
-            e.data ===
-            YT.PlayerState.PLAYING
-        ) {
+            if (
+                !player ||
+                typeof player.seekTo !==
+                    "function"
+            ) {
+                return;
+            }
+
+            try {
+
+                player.seekTo(
+                    0,
+                    true
+                );
+
+                player.playVideo();
+
+                scheduleHideUI();
+
+                /*
+                 * ปิด CC ซ้ำอีกครั้ง
+                 */
+
+                setTimeout(
+                    disableYouTubeCaptions,
+                    500
+                );
+
+                setTimeout(
+                    disableYouTubeCaptions,
+                    2000
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Retry error:",
+                    error
+                );
+            }
+        }
+
+        /* =========================================================
+           PLAY CURRENT
+        ========================================================= */
+
+        function playCurrent() {
 
             isEnding = false;
 
-            showPlayer();
+            hideScore();
 
-            showUI();
+            if (queue.length === 0) {
 
-            if (uiTimer) {
-                clearTimeout(uiTimer);
+                showIdleScreen();
+
+                return;
             }
 
-            uiTimer =
-                setTimeout(
-                    hideUI,
-                    15000
+            stopBgRotation();
+
+            const current =
+                queue[0];
+
+            document.getElementById(
+                "player-wrapper"
+            ).style.display = "block";
+
+            document.getElementById(
+                "empty-state"
+            ).style.display = "none";
+
+            document.getElementById(
+                "now-playing"
+            ).classList.remove("hidden");
+
+            document.getElementById(
+                "now-title"
+            ).innerText =
+                current.title ||
+                "ไม่ทราบชื่อเพลง";
+
+            document.getElementById(
+                "now-channel"
+            ).innerText =
+                current.channel ||
+                "";
+
+            if (
+                player &&
+                typeof player.loadVideoById ===
+                    "function"
+            ) {
+
+                player.loadVideoById(
+                    current.videoId
                 );
 
-            startEndChecker();
+                /*
+                 * =================================================
+                 * ปิด YouTube CC / Auto Subtitle
+                 * =================================================
+                 */
 
-        }
+                setTimeout(
+                    disableYouTubeCaptions,
+                    500
+                );
 
-        if (
-            e.data ===
-            YT.PlayerState.PAUSED
-        ) {
-
-            showUI();
-
-        }
-
-        if (
-            e.data ===
-            YT.PlayerState.ENDED
-        ) {
-
-            if (!isEnding) {
-
-                isEnding = true;
-
-                stopEndChecker();
-
-                showScore();
+                setTimeout(
+                    disableYouTubeCaptions,
+                    2000
+                );
 
             }
 
+            updateQueueUI();
         }
 
-    }
+        /* =========================================================
+           IDLE
+        ========================================================= */
 
-    /* =========================================================
-       PLAY CURRENT
-    ========================================================= */
-
-    function playCurrent() {
-
-        isEnding = false;
-
-        if (queue.length === 0) {
+        function showIdleScreen() {
 
             if (
                 player &&
@@ -1400,541 +1669,664 @@
                     "function"
             ) {
 
-                player.stopVideo();
-
+                try {
+                    player.stopVideo();
+                } catch (error) {}
             }
 
             document.getElementById(
                 "player-wrapper"
-            ).style.display =
-                "none";
+            ).style.display = "none";
 
             document.getElementById(
-                "now-playing-title"
-            ).innerText =
-                "ยังไม่มีเพลง";
+                "empty-state"
+            ).style.display = "flex";
 
             document.getElementById(
-                "now-playing-sub"
-            ).innerText =
-                "สแกน QR เพื่อเพิ่มเพลง";
+                "now-playing"
+            ).classList.add("hidden");
+
+            document.getElementById(
+                "queue-box"
+            ).style.display = "none";
 
             startBgRotation();
 
-            syncQueue();
+            showUI();
 
-            return;
-
+            updateQueueUI();
         }
 
-        stopBgRotation();
+        /* =========================================================
+           YOUTUBE PLAYER
+        ========================================================= */
 
-        const current =
-            queue[0];
+        function onYouTubeIframeAPIReady() {
 
-        document.getElementById(
-            "player-wrapper"
-        ).style.display =
-            "block";
+            player =
+                new YT.Player(
+                    "player",
+                    {
+                        width: "100%",
+                        height: "100%",
 
-        if (
-            player &&
-            typeof player.loadVideoById ===
-                "function"
-        ) {
+                        videoId: "",
 
-            player.loadVideoById(
-                current.videoId
-            );
+                        playerVars: {
 
+                            autoplay: 0,
+
+                            controls: 0,
+
+                            disablekb: 1,
+
+                            fs: 0,
+
+                            modestbranding: 1,
+
+                            rel: 0,
+
+                            iv_load_policy: 3,
+
+                            /*
+                             * ขอให้ YouTube ไม่แสดง Caption
+                             */
+                            cc_load_policy: 0,
+
+                            playsinline: 1,
+
+                            origin:
+                                window.location.origin
+                        },
+
+                        events: {
+
+                            onReady:
+                                onPlayerReady,
+
+                            onStateChange:
+                                onPlayerStateChange,
+
+                            onError:
+                                onPlayerError
+                        }
+                    }
+                );
         }
 
-        updateQueueUI();
+        /* =========================================================
+           PLAYER READY
+        ========================================================= */
 
-    }
+        function onPlayerReady() {
 
-    /* =========================================================
-       SKIP
-    ========================================================= */
+            /*
+             * ปิด CC ทันทีที่ Player พร้อม
+             */
 
-    function skipSong() {
+            disableYouTubeCaptions();
 
-        if (queue.length === 0) {
-            return;
+            if (isAppReady) {
+
+                if (queue.length > 0) {
+
+                    playCurrent();
+
+                } else {
+
+                    showIdleScreen();
+
+                }
+            }
         }
 
-        isEnding = false;
+        /* =========================================================
+           DISABLE YOUTUBE CAPTIONS
+        ========================================================= */
 
-        stopEndChecker();
+        function disableYouTubeCaptions() {
 
-        queue.shift();
+            if (!player) {
+                return;
+            }
 
-        hideScore();
+            try {
 
-        playCurrent();
+                /*
+                 * cc_load_policy = 0
+                 * เป็นการขอไม่ให้ YouTube เปิด Caption
+                 */
 
-        syncQueue();
+                if (
+                    typeof player.unloadModule ===
+                    "function"
+                ) {
 
-    }
+                    try {
 
-    /* =========================================================
-       PLAY / PAUSE
-    ========================================================= */
+                        player.unloadModule(
+                            "captions"
+                        );
 
-    function togglePlayFromController(
-        requestedPaused
-    ) {
+                    } catch (error) {}
 
-        if (
-            !player ||
-            typeof player.getPlayerState !==
-                "function"
-        ) {
+                }
 
-            return;
+                /*
+                 * พยายามเคลียร์ Caption track
+                 */
 
+                if (
+                    typeof player.setOption ===
+                    "function"
+                ) {
+
+                    try {
+
+                        player.setOption(
+                            "captions",
+                            "track",
+                            {}
+                        );
+
+                    } catch (error) {}
+
+                }
+
+            } catch (error) {
+
+                console.log(
+                    "Disable YouTube captions:",
+                    error
+                );
+            }
         }
 
-        const state =
-            player.getPlayerState();
+        /* =========================================================
+           PLAYER STATE
+        ========================================================= */
 
-        if (requestedPaused) {
+        function onPlayerStateChange(event) {
 
             if (
-                state ===
+                event.data ===
                 YT.PlayerState.PLAYING
             ) {
 
-                player.pauseVideo();
+                disableYouTubeCaptions();
 
-            }
+                scheduleHideUI();
 
-        } else {
+                startScoreWatcher();
 
-            if (
-                state ===
-                YT.PlayerState.PAUSED ||
-                state ===
-                YT.PlayerState.CUED
+            } else if (
+                event.data ===
+                YT.PlayerState.PAUSED
             ) {
 
-                player.playVideo();
+                showUI();
 
-            }
+                stopScoreWatcher();
 
-        }
+            } else if (
+                event.data ===
+                YT.PlayerState.ENDED
+            ) {
 
-    }
+                stopScoreWatcher();
 
-    /* =========================================================
-       RETRY
-    ========================================================= */
-
-    function retryPlay() {
-
-        if (
-            !player ||
-            typeof player.seekTo !==
-                "function"
-        ) {
-
-            return;
-
-        }
-
-        isEnding = false;
-
-        stopEndChecker();
-
-        player.seekTo(
-            0,
-            true
-        );
-
-        player.playVideo();
-
-    }
-
-    /* =========================================================
-       END CHECKER
-    ========================================================= */
-
-    function startEndChecker() {
-
-        stopEndChecker();
-
-        checkInterval =
-            setInterval(() => {
-
-                if (
-                    !player ||
-                    typeof player.getDuration !==
-                        "function"
-                ) {
-
-                    return;
-
-                }
-
-                const duration =
-                    player.getDuration();
-
-                const current =
-                    player.getCurrentTime();
-
-                const left =
-                    duration -
-                    current;
-
-                /*
-                 * แสดง UI ช่วงท้ายเพลง
-                 */
-
-                if (
-                    duration > 0 &&
-                    left <= 15 &&
-                    left > 5
-                ) {
-
-                    showUI();
-
-                }
-
-                /*
-                 * เตรียมคะแนน
-                 */
-
-                if (
-                    duration > 0 &&
-                    left <= 5 &&
-                    !isEnding
-                ) {
+                if (!isEnding) {
 
                     isEnding = true;
 
-                    stopEndChecker();
-
-                    showScore();
-
+                    showScoreThenNext();
                 }
+            }
+        }
 
-            }, 1000);
+        /* =========================================================
+           PLAYER ERROR
+        ========================================================= */
 
-    }
+        function onPlayerError(event) {
 
-    function stopEndChecker() {
-
-        if (checkInterval) {
-
-            clearInterval(
-                checkInterval
+            console.error(
+                "YouTube player error:",
+                event.data
             );
 
-            checkInterval = null;
+            /*
+             * 2 = invalid parameter
+             * 5 = HTML5 player error
+             * 100 = removed/not found
+             * 101/150 = embedding not allowed
+             */
 
+            if (
+                [
+                    2,
+                    5,
+                    100,
+                    101,
+                    150
+                ].includes(event.data)
+            ) {
+
+                setTimeout(() => {
+
+                    if (
+                        queue.length > 0 &&
+                        !isEnding
+                    ) {
+
+                        skipSong();
+
+                    }
+
+                }, 2500);
+            }
         }
 
-    }
+        /* =========================================================
+           SCORE WATCHER
+        ========================================================= */
 
-    /* =========================================================
-       SCORE
-    ========================================================= */
+        let scoreWatcher = null;
 
-    function showScore() {
+        function startScoreWatcher() {
 
-        if (
-            queue.length === 0
-        ) {
+            stopScoreWatcher();
 
-            skipSong();
+            scoreWatcher =
+                setInterval(() => {
 
-            return;
+                    if (
+                        !player ||
+                        typeof player.getCurrentTime !==
+                            "function" ||
+                        typeof player.getDuration !==
+                            "function"
+                    ) {
+                        return;
+                    }
 
+                    try {
+
+                        const current =
+                            player.getCurrentTime();
+
+                        const duration =
+                            player.getDuration();
+
+                        if (
+                            duration > 0 &&
+                            duration - current <= 5 &&
+                            duration - current > 0
+                        ) {
+
+                            showScore();
+
+                        }
+
+                    } catch (error) {}
+                }, 1000);
         }
 
-        const score =
-            Math.floor(
-                Math.random() * 21
-            ) + 80;
+        function stopScoreWatcher() {
 
-        const messages = [
+            if (scoreWatcher) {
 
-            "สุดยอด! 🔥",
-            "นักร้องตัวจริง! 🎤",
-            "พลังเสียงเป๊ะมาก! 💥",
-            "ระดับมืออาชีพ! ⭐",
-            "คืนนี้มีดาว! 🌟"
-
-        ];
-
-        document.getElementById(
-            "score-val"
-        ).innerText =
-            score;
-
-        document.getElementById(
-            "score-msg"
-        ).innerText =
-            messages[
-                Math.floor(
-                    Math.random() *
-                    messages.length
-                )
-            ];
-
-        document.getElementById(
-            "score-overlay"
-        ).style.display =
-            "grid";
-
-        document.getElementById(
-            "player-wrapper"
-        ).style.display =
-            "none";
-
-        setTimeout(() => {
-
-            hideScore();
-
-            skipSong();
-
-        }, 5000);
-
-    }
-
-    function hideScore() {
-
-        document.getElementById(
-            "score-overlay"
-        ).style.display =
-            "none";
-
-    }
-
-    /* =========================================================
-       UI
-    ========================================================= */
-
-    function showUI() {
-
-        document.getElementById(
-            "top-ui"
-        ).style.opacity = "1";
-
-        document.getElementById(
-            "queue-panel"
-        ).classList.remove(
-            "hidden"
-        );
-
-        document.getElementById(
-            "qr-panel"
-        ).classList.remove(
-            "hidden"
-        );
-
-        document.getElementById(
-            "now-playing"
-        ).style.opacity = "1";
-
-    }
-
-    function hideUI() {
-
-        if (!isAppReady) {
-            return;
-        }
-
-        document.getElementById(
-            "top-ui"
-        ).style.opacity = "0";
-
-        document.getElementById(
-            "queue-panel"
-        ).classList.add(
-            "hidden"
-        );
-
-        document.getElementById(
-            "qr-panel"
-        ).classList.add(
-            "hidden"
-        );
-
-        document.getElementById(
-            "now-playing"
-        ).style.opacity = "0";
-
-    }
-
-    /* =========================================================
-       PLAYER VISIBILITY
-    ========================================================= */
-
-    function showPlayer() {
-
-        document.getElementById(
-            "player-wrapper"
-        ).style.display =
-            "block";
-
-    }
-
-    /* =========================================================
-       BACKGROUND
-    ========================================================= */
-
-    const backgrounds = [
-
-        "https://picsum.photos/1920/1080?random=101",
-        "https://picsum.photos/1920/1080?random=102",
-        "https://picsum.photos/1920/1080?random=103",
-        "https://picsum.photos/1920/1080?random=104",
-        "https://picsum.photos/1920/1080?random=105"
-
-    ];
-
-    function setBackground(url) {
-
-        const next =
-            activeBg === 1
-                ? document.getElementById("bg2")
-                : document.getElementById("bg1");
-
-        const current =
-            activeBg === 1
-                ? document.getElementById("bg1")
-                : document.getElementById("bg2");
-
-        next.style.backgroundImage =
-            `url("${url}")`;
-
-        next.classList.add(
-            "active"
-        );
-
-        current.classList.remove(
-            "active"
-        );
-
-        activeBg =
-            activeBg === 1
-                ? 2
-                : 1;
-
-    }
-
-    function startBgRotation() {
-
-        if (bgTimer) {
-            return;
-        }
-
-        setBackground(
-            backgrounds[bgIndex]
-        );
-
-        bgTimer =
-            setInterval(() => {
-
-                bgIndex =
-                    (bgIndex + 1) %
-                    backgrounds.length;
-
-                setBackground(
-                    backgrounds[bgIndex]
+                clearInterval(
+                    scoreWatcher
                 );
 
-            }, 20000);
-
-    }
-
-    function stopBgRotation() {
-
-        if (bgTimer) {
-
-            clearInterval(
-                bgTimer
-            );
-
-            bgTimer = null;
-
+                scoreWatcher = null;
+            }
         }
 
-    }
+        /* =========================================================
+           SCORE
+        ========================================================= */
 
-    /* =========================================================
-       START APP
-    ========================================================= */
+        function showScore() {
 
-    function initApp() {
+            const overlay =
+                document.getElementById(
+                    "score-overlay"
+                );
 
-        document.getElementById(
-            "start-overlay"
-        ).style.display =
-            "none";
+            if (
+                overlay.classList.contains(
+                    "show"
+                )
+            ) {
+                return;
+            }
 
-        isAppReady = true;
+            const score =
+                Math.floor(
+                    80 +
+                    Math.random() * 21
+                );
 
-        showUI();
+            const messages = [
+                "สุดยอด! 🔥",
+                "นักร้องตัวจริง! 🎤",
+                "พลังเสียงเป๊ะมาก! 💥",
+                "ระดับมืออาชีพ! ⭐",
+                "คืนนี้มีดาว! 🌟"
+            ];
 
-        /*
-         * ถ้ามีเพลงในคิว
-         * เริ่มทันที
-         */
+            document.getElementById(
+                "score-number"
+            ).innerText =
+                score;
 
-        if (queue.length > 0) {
+            document.getElementById(
+                "score-message"
+            ).innerText =
+                messages[
+                    Math.floor(
+                        Math.random() *
+                        messages.length
+                    )
+                ];
 
-            playCurrent();
+            overlay.classList.add("show");
 
-        } else {
+            clearTimeout(scoreTimer);
+
+            scoreTimer =
+                setTimeout(() => {
+
+                    hideScore();
+
+                    if (
+                        queue.length > 0 &&
+                        !isEnding
+                    ) {
+
+                        isEnding = true;
+
+                        skipSong();
+
+                    }
+
+                }, 5000);
+        }
+
+        function hideScore() {
+
+            const overlay =
+                document.getElementById(
+                    "score-overlay"
+                );
+
+            overlay.classList.remove(
+                "show"
+            );
+
+            clearTimeout(scoreTimer);
+        }
+
+        function showScoreThenNext() {
+
+            showScore();
+        }
+
+        /* =========================================================
+           UI AUTO HIDE
+        ========================================================= */
+
+        function scheduleHideUI() {
+
+            clearTimeout(uiTimer);
+
+            uiTimer =
+                setTimeout(() => {
+
+                    hideUI();
+
+                }, 15000);
+        }
+
+        function hideUI() {
+
+            document.getElementById(
+                "top-bar"
+            ).classList.add("hidden");
+
+            document.getElementById(
+                "now-playing"
+            ).classList.add("hidden");
+
+            document.getElementById(
+                "queue-box"
+            ).classList.add("hidden");
+
+            document.getElementById(
+                "qr-panel"
+            ).classList.add("hidden");
+        }
+
+        function showUI() {
+
+            clearTimeout(uiTimer);
+
+            document.getElementById(
+                "top-bar"
+            ).classList.remove("hidden");
+
+            document.getElementById(
+                "now-playing"
+            ).classList.remove("hidden");
+
+            document.getElementById(
+                "queue-box"
+            ).classList.remove("hidden");
+
+            document.getElementById(
+                "qr-panel"
+            ).classList.remove("hidden");
+
+            if (queue.length === 0) {
+
+                document.getElementById(
+                    "queue-box"
+                ).style.display = "none";
+            }
+        }
+
+        /* =========================================================
+           TOUCH / MOUSE
+        ========================================================= */
+
+        document.addEventListener(
+            "mousemove",
+            () => {
+
+                if (isAppReady) {
+                    showUI();
+                    scheduleHideUI();
+                }
+
+            }
+        );
+
+        document.addEventListener(
+            "touchstart",
+            () => {
+
+                if (isAppReady) {
+                    showUI();
+                    scheduleHideUI();
+                }
+
+            },
+            {
+                passive: true
+            }
+        );
+
+        /* =========================================================
+           BACKGROUND
+        ========================================================= */
+
+        function setBackground(url) {
+
+            const next =
+                activeBg === 1
+                    ? document.getElementById("bg2")
+                    : document.getElementById("bg1");
+
+            const current =
+                activeBg === 1
+                    ? document.getElementById("bg1")
+                    : document.getElementById("bg2");
+
+            next.style.backgroundImage =
+                `url("${url}")`;
+
+            next.classList.add("active");
+
+            current.classList.remove(
+                "active"
+            );
+
+            activeBg =
+                activeBg === 1
+                    ? 2
+                    : 1;
+        }
+
+        function rotateBackground() {
+
+            if (
+                !backgrounds ||
+                backgrounds.length === 0
+            ) {
+                return;
+            }
+
+            setBackground(
+                backgrounds[bgIndex]
+            );
+
+            bgIndex =
+                (bgIndex + 1) %
+                backgrounds.length;
+        }
+
+        function startBgRotation() {
+
+            if (bgTimer) {
+                return;
+            }
+
+            rotateBackground();
+
+            bgTimer =
+                setInterval(
+                    rotateBackground,
+                    20000
+                );
+        }
+
+        function stopBgRotation() {
+
+            if (bgTimer) {
+
+                clearInterval(
+                    bgTimer
+                );
+
+                bgTimer = null;
+            }
+        }
+
+        /* =========================================================
+           INIT APP
+        ========================================================= */
+
+        function initApp() {
+
+            if (isAppReady) {
+                return;
+            }
+
+            isAppReady = true;
+
+            document.getElementById(
+                "start-overlay"
+            ).style.display = "none";
+
+            initRoom();
+
+            initPeer();
 
             startBgRotation();
 
+            if (player) {
+
+                if (queue.length > 0) {
+
+                    playCurrent();
+
+                } else {
+
+                    showIdleScreen();
+
+                }
+            }
         }
 
-    }
+        /* =========================================================
+           INITIAL UI
+        ========================================================= */
 
-    /* =========================================================
-       ESCAPE HTML
-    ========================================================= */
+        updateQueueUI();
 
-    function escapeHtml(value) {
+        /*
+         * เตรียม background แรก
+         */
 
-        return String(value ?? "")
-            .replace(
-                /&/g,
-                "&amp;"
-            )
-            .replace(
-                /</g,
-                "&lt;"
-            )
-            .replace(
-                />/g,
-                "&gt;"
-            )
-            .replace(
-                /"/g,
-                "&quot;"
-            )
-            .replace(
-                /'/g,
-                "&#039;"
-            );
+        document.getElementById(
+            "bg1"
+        ).style.backgroundImage =
+            `url("${backgrounds[0]}")`;
 
-    }
+        /*
+         * ถ้าผู้ใช้กด Enter / Space บน TV
+         */
 
-    /* =========================================================
-       INIT
-    ========================================================= */
+        document.addEventListener(
+            "keydown",
+            event => {
 
-    initRoom();
-    initPeer();
+                if (
+                    !isAppReady &&
+                    (
+                        event.key ===
+                            "Enter" ||
+                        event.key ===
+                            " "
+                    )
+                ) {
 
-    startBgRotation();
+                    initApp();
+                }
 
-</script>
+                if (
+                    isAppReady &&
+                    event.key ===
+                        "Escape"
+                ) {
+
+                    showUI();
+                }
+            }
+        );
+    </script>
 
 </body>
 </html>
