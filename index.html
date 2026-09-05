@@ -1,348 +1,827 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Napat Karaoke Pro - Single Screen</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    body {
-      background-color: #0f172a;
-      color: #f8fafc;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    }
-    .custom-scroll::-webkit-scrollbar {
-      width: 6px;
-    }
-    .custom-scroll::-webkit-scrollbar-track {
-      background: #1e293b;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-      background: #475569;
-      border-radius: 4px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#08080a">
+    <title>Napat Karaoke Pro - All in One</title>
+
+    <style>
+        :root {
+            --red: #ff2d55;
+            --pink: #ff375f;
+            --green: #32d74b;
+            --blue: #0a84ff;
+            --orange: #ff9f0a;
+            --purple: #bf5af2;
+            --dark: #070709;
+            --card: #151518;
+            --card2: #1c1c20;
+            --border: rgba(255,255,255,.09);
+            --muted: #8e8e93;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            background: var(--dark);
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
+        body {
+            padding-bottom: 35px;
+        }
+
+        button, input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .app {
+            width: min(850px, 100%);
+            margin: auto;
+            padding: 14px;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 4px 14px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .brand-icon {
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--red), #ff7048);
+            font-size: 22px;
+            box-shadow: 0 8px 25px rgba(255,45,85,.28);
+        }
+
+        .brand-title {
+            font-size: 17px;
+            font-weight: 900;
+        }
+
+        .brand-sub {
+            margin-top: 2px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .badge-mode {
+            padding: 6px 12px;
+            border-radius: 20px;
+            background: rgba(255,255,255,.06);
+            border: 1px solid var(--border);
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--green);
+        }
+
+        /* VIDEO PLAYER STAGE */
+        .player-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            border-radius: 18px;
+            overflow: hidden;
+            background: #000;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 14px;
+        }
+
+        .player-wrapper iframe, 
+        .player-wrapper #player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .player-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--card);
+            color: var(--muted);
+            text-align: center;
+            padding: 20px;
+        }
+
+        .player-placeholder.hidden {
+            display: none;
+        }
+
+        /* CONTROLS */
+        .main-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 9px;
+            margin-bottom: 14px;
+        }
+
+        .control-btn {
+            border: 0;
+            border-radius: 16px;
+            min-height: 48px;
+            color: white;
+            font-weight: 900;
+            font-size: 13px;
+            transition: transform .12s ease, opacity .12s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .control-btn:active {
+            transform: scale(.97);
+            opacity: .82;
+        }
+
+        .btn-skip {
+            background: linear-gradient(135deg, var(--red), #ff7048);
+            box-shadow: 0 6px 20px rgba(255,45,85,.2);
+        }
+
+        .btn-pause {
+            background: linear-gradient(135deg, #5856d6, #8b5cf6);
+        }
+
+        .btn-retry {
+            background: var(--card2);
+            border: 1px solid var(--border);
+        }
+
+        /* SEARCH SECTION */
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 18px 3px 9px;
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        .section-count {
+            color: var(--green);
+            font-size: 11px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 8px;
+        }
+
+        #search-input {
+            min-width: 0;
+            flex: 1;
+            padding: 14px 15px;
+            border-radius: 14px;
+            border: 1px solid #29292e;
+            outline: none;
+            background: #141416;
+            color: white;
+            font-size: 14px;
+        }
+
+        #search-input:focus {
+            border-color: rgba(10,132,255,.7);
+            box-shadow: 0 0 0 3px rgba(10,132,255,.08);
+        }
+
+        .btn-search {
+            width: 85px;
+            border: 0;
+            border-radius: 14px;
+            background: var(--blue);
+            color: white;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        /* RESULTS */
+        #results {
+            margin-top: 10px;
+            max-height: 380px;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 16px;
+            background: var(--card);
+            border: 1px solid var(--border);
+        }
+
+        .result-thumb {
+            width: 78px;
+            height: 52px;
+            flex-shrink: 0;
+            object-fit: cover;
+            border-radius: 9px;
+            background: #000;
+        }
+
+        .result-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .result-title {
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .result-meta {
+            margin-top: 4px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            color: #777;
+            font-size: 10px;
+        }
+
+        .btn-action-group {
+            display: flex;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
+        .btn-add, .btn-play-now {
+            border: 0;
+            padding: 9px 11px;
+            border-radius: 11px;
+            color: white;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .btn-add {
+            background: var(--red);
+        }
+
+        .btn-play-now {
+            background: #2c2c30;
+            border: 1px solid var(--border);
+        }
+
+        /* QUEUE */
+        .queue-card {
+            overflow: hidden;
+            border-radius: 18px;
+            background: var(--card);
+            border: 1px solid var(--border);
+        }
+
+        #queue-list {
+            padding: 7px;
+        }
+
+        .queue-empty {
+            padding: 28px 10px;
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .queue-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px;
+            margin-bottom: 6px;
+            border-radius: 14px;
+            background: rgba(255,255,255,.035);
+            border: 1px solid rgba(255,255,255,.05);
+        }
+
+        .queue-item.playing {
+            background: rgba(50,215,75,.09);
+            border-color: rgba(50,215,75,.28);
+        }
+
+        .queue-number {
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+            display: grid;
+            place-items: center;
+            border-radius: 10px;
+            background: #29292d;
+            color: #aaa;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .playing .queue-number {
+            background: var(--green);
+            color: #000;
+        }
+
+        .queue-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .queue-status {
+            margin-bottom: 3px;
+            color: var(--green);
+            font-size: 9px;
+            font-weight: 900;
+        }
+
+        .queue-title {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .queue-channel {
+            margin-top: 3px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            color: #666;
+            font-size: 9px;
+        }
+
+        .queue-actions {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .queue-btn {
+            width: 32px;
+            height: 32px;
+            display: grid;
+            place-items: center;
+            padding: 0;
+            border: 0;
+            border-radius: 9px;
+            background: #29292d;
+            color: white;
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .queue-btn.orange { color: var(--orange); }
+        .queue-btn.red { color: var(--red); }
+
+        /* TOAST */
+        #toast {
+            position: fixed;
+            left: 50%;
+            bottom: 22px;
+            z-index: 999;
+            transform: translate(-50%, 20px);
+            opacity: 0;
+            pointer-events: none;
+            padding: 11px 16px;
+            border-radius: 30px;
+            background: rgba(25,25,28,.94);
+            border: 1px solid rgba(255,255,255,.12);
+            box-shadow: 0 10px 35px rgba(0,0,0,.45);
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+            transition: opacity .25s ease, transform .25s ease;
+            white-space: nowrap;
+        }
+
+        #toast.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .loading {
+            padding: 25px 10px;
+            text-align: center;
+            color: #777;
+            font-size: 13px;
+        }
+
+        .error {
+            padding: 20px;
+            text-align: center;
+            color: var(--red);
+            font-size: 13px;
+        }
+    </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden">
+<body>
 
-  <!-- Header -->
-  <header class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between shadow-md">
-    <div class="flex items-center space-x-3">
-      <i class="fa-solid fa-microphone-lines text-red-500 text-2xl"></i>
-      <h1 class="text-xl font-bold tracking-wide text-white">Napat <span class="text-red-500">Karaoke Pro</span></h1>
+<div class="app">
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="brand">
+            <div class="brand-icon">🎤</div>
+            <div>
+                <div class="brand-title">Napat Karaoke Pro</div>
+                <div class="brand-sub">Single Screen Edition</div>
+            </div>
+        </div>
+        <div class="badge-mode">
+            ● หน้าจอเดียว
+        </div>
+    </header>
+
+    <!-- YOUTUBE PLAYER SCREEN -->
+    <div class="player-wrapper">
+        <div id="player"></div>
+        <div id="player-placeholder" class="player-placeholder">
+            <div style="font-size: 40px; margin-bottom: 8px;">🎶</div>
+            <div style="font-weight: 700; font-size: 15px; color: #fff;">ยังไม่มีเพลงกำลังเล่น</div>
+            <div style="font-size: 12px; margin-top: 4px;">ค้นหาเพลงด้านล่างแล้วกด "เล่นเลย" หรือ "จอง"</div>
+        </div>
     </div>
 
-    <!-- Quick Playback Controls -->
-    <div class="flex items-center space-x-3">
-      <button id="btnSkip" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm font-medium transition flex items-center gap-2 border border-slate-700">
-        <i class="fa-solid fa-forward"></i> ข้ามเพลง
-      </button>
-      <button id="btnRestart" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm font-medium transition flex items-center gap-2 border border-slate-700">
-        <i class="fa-solid fa-rotate-left"></i> ร้องใหม่
-      </button>
-    </div>
-  </header>
-
-  <!-- Main Layout (2 Columns) -->
-  <div class="flex-1 flex overflow-hidden">
-
-    <!-- ฝั่งซ้าย: จอแสดงผลคาราโอเกะ (Video Player) -->
-    <div class="flex-1 flex flex-col bg-black p-4">
-      <div class="relative w-full h-full flex items-center justify-center rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl">
-        <div id="player" class="w-full h-full"></div>
-        
-        <!-- กรณีไม่มีเพลงกำลังเล่น -->
-        <div id="noVideoPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 text-slate-400">
-          <i class="fa-solid fa-music text-6xl mb-4 text-slate-600 animate-pulse"></i>
-          <p class="text-xl font-semibold text-slate-300">ยังไม่มีเพลงในคิว</p>
-          <p class="text-sm text-slate-500 mt-1">ค้นหาเพลงและกดเลือกเพื่อเริ่มร้องคาราโอเกะ</p>
-        </div>
-      </div>
-      
-      <!-- ข้อมูลเพลงที่กำลังเล่น -->
-      <div class="mt-3 py-2 px-4 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between">
-        <div class="truncate mr-4">
-          <span class="text-xs uppercase px-2 py-0.5 rounded bg-red-600 font-bold text-white tracking-wider mr-2">NOW PLAYING</span>
-          <span id="currentTitle" class="text-sm font-medium text-slate-200">ยังไม่มีเพลงกำลังเล่น</span>
-        </div>
-        <div id="queueCountBadge" class="text-xs text-slate-400 whitespace-nowrap bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
-          คิวเพลง: 0 เพลง
-        </div>
-      </div>
-    </div>
-
-    <!-- ฝั่งขวา: ค้นหาเพลง + คิวเพลง -->
-    <div class="w-[420px] bg-slate-900 border-l border-slate-800 flex flex-col shadow-xl">
-      
-      <!-- ช่องค้นหาเพลง -->
-      <div class="p-4 border-b border-slate-800">
-        <form id="searchForm" class="relative">
-          <input 
-            type="text" 
-            id="searchInput" 
-            placeholder="ค้นหาชื่อเพลง, ศิลปิน..." 
-            class="w-full bg-slate-950 border border-slate-700 focus:border-red-500 focus:outline-none rounded-xl py-3 pl-11 pr-12 text-sm text-white placeholder-slate-500 transition"
-          />
-          <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
-          <button type="submit" class="absolute right-2 top-2 bg-red-600 hover:bg-red-700 text-white rounded-lg px-3 py-1.5 text-xs font-semibold transition">
-            ค้นหา
-          </button>
-        </form>
-      </div>
-
-      <!-- Tab Switcher (ผลการค้นหา / รายการคิว) -->
-      <div class="flex border-b border-slate-800 text-sm font-semibold bg-slate-950/40">
-        <button id="tabSearch" class="flex-1 py-3 text-center border-b-2 border-red-500 text-red-500 transition">
-          <i class="fa-solid fa-list mr-1"></i> ผลการค้นหา
+    <!-- PLAYBACK CONTROLS -->
+    <div class="main-controls">
+        <button class="control-btn btn-skip" onclick="skipSong()">
+            ⏭️ ข้ามเพลง
         </button>
-        <button id="tabQueue" class="flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition">
-          <i class="fa-solid fa-layer-group mr-1"></i> คิวเพลง (<span id="tabQueueCount">0</span>)
+        <button id="pause-btn" class="control-btn btn-pause" onclick="togglePlay()">
+            ⏸️ หยุดชั่วคราว
         </button>
-      </div>
-
-      <!-- Tab Content 1: ผลการค้นหาเพลง -->
-      <div id="searchPanel" class="flex-1 overflow-y-auto p-3 custom-scroll">
-        <div id="searchLoading" class="hidden text-center py-10 text-slate-400">
-          <i class="fa-solid fa-circle-notch fa-spin text-2xl text-red-500 mb-2"></i>
-          <p class="text-sm">กำลังค้นหาเพลงคาราโอเกะ...</p>
-        </div>
-        <div id="searchDefault" class="text-center py-12 text-slate-500 text-sm">
-          พิมพ์ชื่อเพลงเพื่อค้นหาคาราโอเกะ
-        </div>
-        <div id="searchResults" class="space-y-2"></div>
-      </div>
-
-      <!-- Tab Content 2: คิวเพลง -->
-      <div id="queuePanel" class="hidden flex-1 overflow-y-auto p-3 custom-scroll">
-        <div id="queueEmpty" class="text-center py-12 text-slate-500 text-sm">
-          ยังไม่มีเพลงในคิว
-        </div>
-        <div id="queueList" class="space-y-2"></div>
-      </div>
-
+        <button class="control-btn btn-retry" onclick="retrySong()">
+            🔄 ร้องใหม่
+        </button>
     </div>
-  </div>
 
-  <!-- YouTube IFrame API -->
-  <script src="https://www.youtube.com/iframe_api"></script>
+    <!-- SEARCH SECTION -->
+    <div class="section-title">
+        <span>🔎 ค้นหาเพลง</span>
+        <span id="result-count" class="section-count"></span>
+    </div>
 
-  <script>
+    <div class="search-box">
+        <input id="search-input" type="text" autocomplete="off" placeholder="พิมพ์ชื่อเพลง / ศิลปิน...">
+        <button class="btn-search" onclick="searchMusic()">ค้นหา</button>
+    </div>
+
+    <div id="results"></div>
+
+    <!-- QUEUE SECTION -->
+    <div class="section-title">
+        <span>🎶 คิวเพลง</span>
+        <span id="queue-count" class="section-count">0 เพลง</span>
+    </div>
+
+    <div class="queue-card">
+        <div id="queue-list">
+            <div class="queue-empty">🎵 ยังไม่มีเพลงในคิว</div>
+        </div>
+    </div>
+
+</div>
+
+<div id="toast"></div>
+
+<!-- YouTube IFrame API -->
+<script src="https://www.youtube.com/iframe_api"></script>
+
+<script>
+    /* =========================================================
+       STATE & YOUTUBE PLAYER
+    ========================================================= */
     let player = null;
     let isPlayerReady = false;
-    let currentVideo = null;
-    let queue = [];
+    let currentQueue = [];
+    let isPaused = false;
+    let toastTimer = null;
 
-    // Elements
-    const searchForm = document.getElementById('searchForm');
-    const searchInput = document.getElementById('searchInput');
-    const searchResults = document.getElementById('searchResults');
-    const searchLoading = document.getElementById('searchLoading');
-    const searchDefault = document.getElementById('searchDefault');
-    const queueList = document.getElementById('queueList');
-    const queueEmpty = document.getElementById('queueEmpty');
-    const noVideoPlaceholder = document.getElementById('noVideoPlaceholder');
-    const currentTitle = document.getElementById('currentTitle');
-    const queueCountBadge = document.getElementById('queueCountBadge');
-    const tabQueueCount = document.getElementById('tabQueueCount');
-
-    const tabSearch = document.getElementById('tabSearch');
-    const tabQueue = document.getElementById('tabQueue');
-    const searchPanel = document.getElementById('searchPanel');
-    const queuePanel = document.getElementById('queuePanel');
-
-    // โหลด YouTube Player
     function onYouTubeIframeAPIReady() {
-      player = new YT.Player('player', {
-        height: '100%',
-        width: '100%',
-        playerVars: {
-          autoplay: 1,
-          controls: 1,
-          rel: 0,
-          modestbranding: 1
-        },
-        events: {
-          'onReady': onPlayerReady,
-          'onStateChange': onPlayerStateChange
-        }
-      });
+        player = new YT.Player('player', {
+            height: '100%',
+            width: '100%',
+            playerVars: {
+                autoplay: 1,
+                controls: 1,
+                rel: 0,
+                modestbranding: 1
+            },
+            events: {
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange
+            }
+        });
     }
 
-    function onPlayerReady(event) {
-      isPlayerReady = true;
+    function onPlayerReady() {
+        isPlayerReady = true;
     }
 
-    // เมื่อเพลงเล่นจบ ให้ข้ามไปเพลงถัดไปในคิวอัตโนมัติ
     function onPlayerStateChange(event) {
-      if (event.data === YT.PlayerState.ENDED) {
-        playNext();
-      }
-    }
-
-    // สลับ Tabs
-    tabSearch.addEventListener('click', () => {
-      tabSearch.className = "flex-1 py-3 text-center border-b-2 border-red-500 text-red-500 transition";
-      tabQueue.className = "flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition";
-      searchPanel.classList.remove('hidden');
-      queuePanel.classList.add('hidden');
-    });
-
-    tabQueue.addEventListener('click', () => {
-      tabQueue.className = "flex-1 py-3 text-center border-b-2 border-red-500 text-red-500 transition";
-      tabSearch.className = "flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition";
-      queuePanel.classList.remove('hidden');
-      searchPanel.classList.add('hidden');
-    });
-
-    // ยิงค้นหาผ่าน Cloudflare Functions: /api/search?q=...
-    searchForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const q = searchInput.value.trim();
-      if (!q) return;
-
-      searchDefault.classList.add('hidden');
-      searchLoading.classList.remove('hidden');
-      searchResults.innerHTML = '';
-
-      try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-        const data = await res.json();
-
-        searchLoading.classList.add('hidden');
-        if (data.success && data.results && data.results.length > 0) {
-          renderSearchResults(data.results);
-        } else {
-          searchResults.innerHTML = `<div class="text-center py-8 text-slate-500 text-sm">ไม่พบผลการค้นหา</div>`;
+        // เมื่อเพลงเล่นจบ (YT.PlayerState.ENDED = 0)
+        if (event.data === YT.PlayerState.ENDED) {
+            skipSong();
         }
-      } catch (err) {
-        searchLoading.classList.add('hidden');
-        searchResults.innerHTML = `<div class="text-center py-8 text-red-400 text-sm">เกิดข้อผิดพลาดในการค้นหา</div>`;
-      }
-    });
-
-    // แสดงผลลัพธ์การค้นหา
-    function renderSearchResults(items) {
-      searchResults.innerHTML = '';
-      items.forEach(item => {
-        const div = document.createElement('div');
-        div.className = "p-2 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-slate-700 flex items-center justify-between gap-3 transition group";
-        div.innerHTML = `
-          <div class="flex items-center gap-3 overflow-hidden">
-            <img src="${item.thumbnail}" class="w-16 h-12 object-cover rounded-lg flex-shrink-0 bg-slate-800">
-            <div class="truncate">
-              <div class="text-xs font-semibold text-slate-200 truncate group-hover:text-white">${item.title}</div>
-              <div class="text-[11px] text-slate-400 truncate mt-0.5">${item.channel} • ${item.duration || ''}</div>
-            </div>
-          </div>
-          <div class="flex items-center gap-1.5 flex-shrink-0">
-            <button onclick='addToQueue(${JSON.stringify(item)}, true)' class="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition" title="เล่นทันที">
-              <i class="fa-solid fa-play"></i>
-            </button>
-            <button onclick='addToQueue(${JSON.stringify(item)}, false)' class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition border border-slate-700" title="ต่อคิว">
-              + คิว
-            </button>
-          </div>
-        `;
-        searchResults.appendChild(div);
-      });
     }
 
-    // จัดการคิวเพลง
-    function addToQueue(item, playNow = false) {
-      if (playNow) {
-        if (currentVideo) {
-          queue.unshift(item);
-          playNext();
-        } else {
-          startPlaying(item);
+    /* =========================================================
+       CORE PLAYBACK
+    ========================================================= */
+    function playCurrentSong() {
+        const placeholder = document.getElementById('player-placeholder');
+        if (currentQueue.length === 0) {
+            placeholder.classList.remove('hidden');
+            if (isPlayerReady && player) {
+                player.stopVideo();
+            }
+            renderQueue();
+            return;
         }
-      } else {
-        if (!currentVideo) {
-          startPlaying(item);
-        } else {
-          queue.push(item);
-          updateQueueUI();
-        }
-      }
-    }
 
-    function startPlaying(item) {
-      currentVideo = item;
-      noVideoPlaceholder.classList.add('hidden');
-      currentTitle.innerText = item.title;
-
-      if (isPlayerReady && player) {
-        player.loadVideoById(item.videoId);
-      }
-      updateQueueUI();
-    }
-
-    function playNext() {
-      if (queue.length > 0) {
-        const next = queue.shift();
-        startPlaying(next);
-      } else {
-        currentVideo = null;
-        currentTitle.innerText = "ยังไม่มีเพลงกำลังเล่น";
-        noVideoPlaceholder.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+        const song = currentQueue[0];
+        
         if (isPlayerReady && player) {
-          player.stopVideo();
+            player.loadVideoById(song.videoId);
+            isPaused = false;
+            updatePauseButton();
         }
-        updateQueueUI();
-      }
+        renderQueue();
     }
 
-    function removeFromQueue(index) {
-      queue.splice(index, 1);
-      updateQueueUI();
+    function togglePlay() {
+        if (!isPlayerReady || !player || currentQueue.length === 0) return;
+
+        if (isPaused) {
+            player.playVideo();
+            isPaused = false;
+        } else {
+            player.pauseVideo();
+            isPaused = true;
+        }
+        updatePauseButton();
     }
 
-    function updateQueueUI() {
-      queueCountBadge.innerText = `คิวเพลง: ${queue.length} เพลง`;
-      tabQueueCount.innerText = queue.length;
-
-      if (queue.length === 0) {
-        queueEmpty.classList.remove('hidden');
-        queueList.innerHTML = '';
-        return;
-      }
-
-      queueEmpty.classList.add('hidden');
-      queueList.innerHTML = '';
-
-      queue.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = "p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3";
-        div.innerHTML = `
-          <div class="flex items-center gap-3 overflow-hidden">
-            <span class="text-xs font-bold text-slate-500 w-4 text-center">${index + 1}</span>
-            <img src="${item.thumbnail}" class="w-12 h-9 object-cover rounded-md flex-shrink-0 bg-slate-800">
-            <div class="truncate">
-              <div class="text-xs font-medium text-slate-200 truncate">${item.title}</div>
-              <div class="text-[10px] text-slate-500 truncate">${item.channel}</div>
-            </div>
-          </div>
-          <button onclick="removeFromQueue(${index})" class="text-slate-500 hover:text-red-400 p-1.5 transition">
-            <i class="fa-solid fa-trash-can text-xs"></i>
-          </button>
-        `;
-        queueList.appendChild(div);
-      });
+    function updatePauseButton() {
+        const btn = document.getElementById("pause-btn");
+        btn.innerText = isPaused ? "▶️ เล่นต่อ" : "⏸️ หยุดชั่วคราว";
     }
 
-    // ปุ่มควบคุม
-    document.getElementById('btnSkip').addEventListener('click', () => {
-      playNext();
-    });
+    function skipSong() {
+        if (currentQueue.length === 0) return;
+        currentQueue.shift();
+        playCurrentSong();
+        showToast("⏭️ ข้ามเพลงเรียบร้อย");
+    }
 
-    document.getElementById('btnRestart').addEventListener('click', () => {
-      if (currentVideo && isPlayerReady && player) {
+    function retrySong() {
+        if (!isPlayerReady || !player || currentQueue.length === 0) return;
         player.seekTo(0);
         player.playVideo();
-      }
+        isPaused = false;
+        updatePauseButton();
+        showToast("🔄 เริ่มเพลงใหม่");
+    }
+
+    /* =========================================================
+       SEARCH
+    ========================================================= */
+    async function searchMusic() {
+        const input = document.getElementById("search-input");
+        const q = input.value.trim();
+        if (!q) {
+            input.focus();
+            return;
+        }
+
+        const results = document.getElementById("results");
+        const count = document.getElementById("result-count");
+
+        results.innerHTML = `<div class="loading">🔎 กำลังค้นหาเพลง...</div>`;
+        count.innerText = "";
+
+        try {
+            const response = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const data = await response.json();
+            if (!data || data.success !== true || !Array.isArray(data.results)) {
+                throw new Error(data?.error || "รูปแบบข้อมูลไม่ถูกต้อง");
+            }
+
+            const songs = data.results;
+            count.innerText = `${songs.length} รายการ`;
+
+            if (songs.length === 0) {
+                results.innerHTML = `<div class="loading">😢 ไม่พบเพลง</div>`;
+                return;
+            }
+
+            results.innerHTML = songs.map(song => createResultHtml(song)).join("");
+        } catch (error) {
+            results.innerHTML = `
+                <div class="error">
+                    ❌ ค้นหาไม่สำเร็จ<br>
+                    <small>${escapeHtml(error.message)}</small>
+                </div>
+            `;
+        }
+    }
+
+    function createResultHtml(song) {
+        const safeSong = encodeURIComponent(JSON.stringify(song));
+        const thumbnail = song.thumbnail || `https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`;
+        const channel = song.channel || song.author || "";
+        const duration = song.duration ? ` • ${song.duration}` : "";
+
+        return `
+            <div class="result-item">
+                <img class="result-thumb" src="${escapeHtml(thumbnail)}" loading="lazy">
+                <div class="result-info">
+                    <div class="result-title">${escapeHtml(song.title || "ไม่ทราบชื่อ")}</div>
+                    <div class="result-meta">${escapeHtml(channel)}${escapeHtml(duration)}</div>
+                </div>
+                <div class="btn-action-group">
+                    <button class="btn-play-now" data-song="${safeSong}" onclick="playImmediately(this)">
+                        ▶ เล่นเลย
+                    </button>
+                    <button class="btn-add" data-song="${safeSong}" onclick="addSongFromButton(this)">
+                        ＋ จอง
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    /* =========================================================
+       QUEUE MANAGEMENT
+    ========================================================= */
+    function addSongFromButton(button) {
+        try {
+            const song = JSON.parse(decodeURIComponent(button.dataset.song));
+            addSong(song, false);
+        } catch (e) {
+            showToast("เพิ่มเพลงไม่สำเร็จ");
+        }
+    }
+
+    function playImmediately(button) {
+        try {
+            const song = JSON.parse(decodeURIComponent(button.dataset.song));
+            addSong(song, true);
+        } catch (e) {
+            showToast("เล่นเพลงไม่สำเร็จ");
+        }
+    }
+
+    function addSong(song, playNow = false) {
+        if (!song || !song.videoId) {
+            showToast("เพลงนี้ไม่มี Video ID");
+            return;
+        }
+
+        if (playNow) {
+            currentQueue.unshift(song);
+            playCurrentSong();
+            showToast("▶️ เล่นเพลงทันที");
+            return;
+        }
+
+        if (currentQueue.some(item => item.videoId === song.videoId)) {
+            showToast("🎵 เพลงนี้อยู่ในคิวแล้ว");
+            return;
+        }
+
+        currentQueue.push(song);
+        if (currentQueue.length === 1) {
+            playCurrentSong();
+        } else {
+            renderQueue();
+        }
+        showToast("🎵 เพิ่มเพลงเข้าคิวแล้ว");
+    }
+
+    function deleteSong(index) {
+        if (index < 0 || index >= currentQueue.length) return;
+        const song = currentQueue[index];
+        if (!confirm(`ลบ "${song?.title || 'เพลงนี้'}" ออกจากคิว?`)) return;
+
+        if (index === 0) {
+            skipSong();
+        } else {
+            currentQueue.splice(index, 1);
+            renderQueue();
+            showToast("🗑️ ลบเพลงแล้ว");
+        }
+    }
+
+    function moveSong(index, direction) {
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        if (targetIndex < 1 || targetIndex >= currentQueue.length) return; // ไม่ให้แซงเพลงกำลังเล่น (index 0)
+
+        const temp = currentQueue[index];
+        currentQueue[index] = currentQueue[targetIndex];
+        currentQueue[targetIndex] = temp;
+        renderQueue();
+    }
+
+    function renderQueue() {
+        const list = document.getElementById("queue-list");
+        const count = document.getElementById("queue-count");
+
+        count.innerText = `${currentQueue.length} เพลง`;
+
+        if (currentQueue.length === 0) {
+            list.innerHTML = `<div class="queue-empty">🎵 ยังไม่มีเพลงในคิว</div>`;
+            return;
+        }
+
+        list.innerHTML = currentQueue.map((song, index) => {
+            const isPlaying = index === 0;
+            return `
+                <div class="queue-item ${isPlaying ? "playing" : ""}">
+                    <div class="queue-number">${isPlaying ? "▶" : index + 1}</div>
+                    <div class="queue-info">
+                        ${isPlaying ? '<div class="queue-status">กำลังเล่น</div>' : ""}
+                        <div class="queue-title">${escapeHtml(song.title || "ไม่ทราบชื่อ")}</div>
+                        <div class="queue-channel">${escapeHtml(song.channel || song.author || "")}</div>
+                    </div>
+                    <div class="queue-actions">
+                        ${index > 1 ? `
+                            <button class="queue-btn orange" onclick="moveSong(${index}, 'up')">▲</button>
+                        ` : ""}
+                        ${index > 0 && index < currentQueue.length - 1 ? `
+                            <button class="queue-btn orange" onclick="moveSong(${index}, 'down')">▼</button>
+                        ` : ""}
+                        <button class="queue-btn red" onclick="deleteSong(${index})">🗑</button>
+                    </div>
+                </div>
+            `;
+        }).join("");
+    }
+
+    /* =========================================================
+       HELPERS
+    ========================================================= */
+    function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.innerText = message;
+        toast.classList.add("show");
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    document.getElementById("search-input").addEventListener("keydown", event => {
+        if (event.key === "Enter") searchMusic();
     });
-  </script>
+
+    renderQueue();
+</script>
+
 </body>
 </html>
