@@ -4,14 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#08080a">
-    <title>Napat Karaoke Pro - Single Screen</title>
+    <title>Napat Karaoke Pro - All in One</title>
 
     <style>
         :root {
             --red: #ff2d55;
+            --pink: #ff375f;
             --green: #32d74b;
             --blue: #0a84ff;
             --orange: #ff9f0a;
+            --purple: #bf5af2;
             --dark: #070709;
             --card: #151518;
             --card2: #1c1c20;
@@ -29,12 +31,12 @@
             padding: 0;
             min-height: 100%;
             background: var(--dark);
-            color: #ffffff;
+            color: white;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
         }
 
         body {
-            padding-bottom: 40px;
+            padding-bottom: 35px;
         }
 
         button, input {
@@ -47,7 +49,7 @@
 
         .app {
             width: min(850px, 100%);
-            margin: 0 auto;
+            margin: auto;
             padding: 14px;
         }
 
@@ -97,15 +99,16 @@
             color: var(--green);
         }
 
-        /* PLAYER STAGE */
+        /* VIDEO PLAYER STAGE */
         .player-wrapper {
             position: relative;
             width: 100%;
-            padding-top: 56.25%; /* อัตราส่วน 16:9 */
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
             border-radius: 18px;
             overflow: hidden;
-            background: #000000;
+            background: #000;
             border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             margin-bottom: 14px;
         }
 
@@ -130,11 +133,10 @@
             color: var(--muted);
             text-align: center;
             padding: 20px;
-            z-index: 2;
         }
 
         .player-placeholder.hidden {
-            display: none !important;
+            display: none;
         }
 
         /* CONTROLS */
@@ -166,6 +168,7 @@
 
         .btn-skip {
             background: linear-gradient(135deg, var(--red), #ff7048);
+            box-shadow: 0 6px 20px rgba(255,45,85,.2);
         }
 
         .btn-pause {
@@ -177,7 +180,7 @@
             border: 1px solid var(--border);
         }
 
-        /* SEARCH */
+        /* SEARCH SECTION */
         .section-title {
             display: flex;
             justify-content: space-between;
@@ -290,8 +293,14 @@
             font-weight: 900;
         }
 
-        .btn-add { background: var(--red); }
-        .btn-play-now { background: #2c2c30; border: 1px solid var(--border); }
+        .btn-add {
+            background: var(--red);
+        }
+
+        .btn-play-now {
+            background: #2c2c30;
+            border: 1px solid var(--border);
+        }
 
         /* QUEUE */
         .queue-card {
@@ -399,6 +408,7 @@
         .queue-btn.orange { color: var(--orange); }
         .queue-btn.red { color: var(--red); }
 
+        /* TOAST */
         #toast {
             position: fixed;
             left: 50%;
@@ -411,6 +421,7 @@
             border-radius: 30px;
             background: rgba(25,25,28,.94);
             border: 1px solid rgba(255,255,255,.12);
+            box-shadow: 0 10px 35px rgba(0,0,0,.45);
             color: white;
             font-size: 12px;
             font-weight: 700;
@@ -441,6 +452,7 @@
 <body>
 
 <div class="app">
+
     <!-- HEADER -->
     <header class="header">
         <div class="brand">
@@ -450,10 +462,12 @@
                 <div class="brand-sub">Single Screen Edition</div>
             </div>
         </div>
-        <div class="badge-mode">● หน้าจอเดียว</div>
+        <div class="badge-mode">
+            ● หน้าจอเดียว
+        </div>
     </header>
 
-    <!-- PLAYER -->
+    <!-- YOUTUBE PLAYER SCREEN -->
     <div class="player-wrapper">
         <div id="player"></div>
         <div id="player-placeholder" class="player-placeholder">
@@ -463,14 +477,20 @@
         </div>
     </div>
 
-    <!-- CONTROLS -->
+    <!-- PLAYBACK CONTROLS -->
     <div class="main-controls">
-        <button class="control-btn btn-skip" onclick="skipSong()">⏭️ ข้ามเพลง</button>
-        <button id="pause-btn" class="control-btn btn-pause" onclick="togglePlay()">⏸️ หยุดชั่วคราว</button>
-        <button class="control-btn btn-retry" onclick="retrySong()">🔄 ร้องใหม่</button>
+        <button class="control-btn btn-skip" onclick="skipSong()">
+            ⏭️ ข้ามเพลง
+        </button>
+        <button id="pause-btn" class="control-btn btn-pause" onclick="togglePlay()">
+            ⏸️ หยุดชั่วคราว
+        </button>
+        <button class="control-btn btn-retry" onclick="retrySong()">
+            🔄 ร้องใหม่
+        </button>
     </div>
 
-    <!-- SEARCH -->
+    <!-- SEARCH SECTION -->
     <div class="section-title">
         <span>🔎 ค้นหาเพลง</span>
         <span id="result-count" class="section-count"></span>
@@ -483,7 +503,7 @@
 
     <div id="results"></div>
 
-    <!-- QUEUE -->
+    <!-- QUEUE SECTION -->
     <div class="section-title">
         <span>🎶 คิวเพลง</span>
         <span id="queue-count" class="section-count">0 เพลง</span>
@@ -494,23 +514,25 @@
             <div class="queue-empty">🎵 ยังไม่มีเพลงในคิว</div>
         </div>
     </div>
+
 </div>
 
 <div id="toast"></div>
 
-<!-- โหลด YouTube API ทางตรง -->
+<!-- YouTube IFrame API -->
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
+    /* =========================================================
+       STATE & YOUTUBE PLAYER
+    ========================================================= */
     let player = null;
     let isPlayerReady = false;
     let currentQueue = [];
     let isPaused = false;
     let toastTimer = null;
-    let pendingVideoId = null;
 
-    // ทำงานเมื่อโหลด YouTube API เสร็จ
-    window.onYouTubeIframeAPIReady = function() {
+    function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
             height: '100%',
             width: '100%',
@@ -518,41 +540,34 @@
                 autoplay: 1,
                 controls: 1,
                 rel: 0,
-                modestbranding: 1,
-                playsinline: 1
+                modestbranding: 1
             },
             events: {
-                'onReady': function() {
-                    isPlayerReady = true;
-                    if (pendingVideoId) {
-                        loadAndPlay(pendingVideoId);
-                        pendingVideoId = null;
-                    }
-                },
-                'onStateChange': function(event) {
-                    if (event.data === YT.PlayerState.ENDED) {
-                        skipSong();
-                    }
-                }
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange
             }
         });
-    };
-
-    function loadAndPlay(videoId) {
-        if (!isPlayerReady || !player || typeof player.loadVideoById !== 'function') {
-            pendingVideoId = videoId;
-            return;
-        }
-        player.loadVideoById(videoId);
-        isPaused = false;
-        updatePauseButton();
     }
 
+    function onPlayerReady() {
+        isPlayerReady = true;
+    }
+
+    function onPlayerStateChange(event) {
+        // เมื่อเพลงเล่นจบ (YT.PlayerState.ENDED = 0)
+        if (event.data === YT.PlayerState.ENDED) {
+            skipSong();
+        }
+    }
+
+    /* =========================================================
+       CORE PLAYBACK
+    ========================================================= */
     function playCurrentSong() {
         const placeholder = document.getElementById('player-placeholder');
         if (currentQueue.length === 0) {
             placeholder.classList.remove('hidden');
-            if (isPlayerReady && player && typeof player.stopVideo === 'function') {
+            if (isPlayerReady && player) {
                 player.stopVideo();
             }
             renderQueue();
@@ -560,12 +575,19 @@
         }
 
         placeholder.classList.add('hidden');
-        loadAndPlay(currentQueue[0].videoId);
+        const song = currentQueue[0];
+        
+        if (isPlayerReady && player) {
+            player.loadVideoById(song.videoId);
+            isPaused = false;
+            updatePauseButton();
+        }
         renderQueue();
     }
 
     function togglePlay() {
         if (!isPlayerReady || !player || currentQueue.length === 0) return;
+
         if (isPaused) {
             player.playVideo();
             isPaused = false;
@@ -597,6 +619,9 @@
         showToast("🔄 เริ่มเพลงใหม่");
     }
 
+    /* =========================================================
+       SEARCH
+    ========================================================= */
     async function searchMusic() {
         const input = document.getElementById("search-input");
         const q = input.value.trim();
@@ -608,7 +633,7 @@
         const results = document.getElementById("results");
         const count = document.getElementById("result-count");
 
-        results.innerHTML = '<div class="loading">🔎 กำลังค้นหาเพลง...</div>';
+        results.innerHTML = `<div class="loading">🔎 กำลังค้นหาเพลง...</div>`;
         count.innerText = "";
 
         try {
@@ -624,13 +649,18 @@
             count.innerText = `${songs.length} รายการ`;
 
             if (songs.length === 0) {
-                results.innerHTML = '<div class="loading">😢 ไม่พบเพลง</div>';
+                results.innerHTML = `<div class="loading">😢 ไม่พบเพลง</div>`;
                 return;
             }
 
             results.innerHTML = songs.map(song => createResultHtml(song)).join("");
         } catch (error) {
-            results.innerHTML = `<div class="error">❌ ค้นหาไม่สำเร็จ<br><small>${escapeHtml(error.message)}</small></div>`;
+            results.innerHTML = `
+                <div class="error">
+                    ❌ ค้นหาไม่สำเร็จ<br>
+                    <small>${escapeHtml(error.message)}</small>
+                </div>
+            `;
         }
     }
 
@@ -648,13 +678,20 @@
                     <div class="result-meta">${escapeHtml(channel)}${escapeHtml(duration)}</div>
                 </div>
                 <div class="btn-action-group">
-                    <button class="btn-play-now" data-song="${safeSong}" onclick="playImmediately(this)">▶ เล่นเลย</button>
-                    <button class="btn-add" data-song="${safeSong}" onclick="addSongFromButton(this)">＋ จอง</button>
+                    <button class="btn-play-now" data-song="${safeSong}" onclick="playImmediately(this)">
+                        ▶ เล่นเลย
+                    </button>
+                    <button class="btn-add" data-song="${safeSong}" onclick="addSongFromButton(this)">
+                        ＋ จอง
+                    </button>
                 </div>
             </div>
         `;
     }
 
+    /* =========================================================
+       QUEUE MANAGEMENT
+    ========================================================= */
     function addSongFromButton(button) {
         try {
             const song = JSON.parse(decodeURIComponent(button.dataset.song));
@@ -716,7 +753,7 @@
 
     function moveSong(index, direction) {
         const targetIndex = direction === 'up' ? index - 1 : index + 1;
-        if (targetIndex < 1 || targetIndex >= currentQueue.length) return;
+        if (targetIndex < 1 || targetIndex >= currentQueue.length) return; // ไม่ให้แซงเพลงกำลังเล่น (index 0)
 
         const temp = currentQueue[index];
         currentQueue[index] = currentQueue[targetIndex];
@@ -731,7 +768,7 @@
         count.innerText = `${currentQueue.length} เพลง`;
 
         if (currentQueue.length === 0) {
-            list.innerHTML = '<div class="queue-empty">🎵 ยังไม่มีเพลงในคิว</div>';
+            list.innerHTML = `<div class="queue-empty">🎵 ยังไม่มีเพลงในคิว</div>`;
             return;
         }
 
@@ -746,8 +783,12 @@
                         <div class="queue-channel">${escapeHtml(song.channel || song.author || "")}</div>
                     </div>
                     <div class="queue-actions">
-                        ${index > 1 ? `<button class="queue-btn orange" onclick="moveSong(${index}, 'up')">▲</button>` : ""}
-                        ${index > 0 && index < currentQueue.length - 1 ? `<button class="queue-btn orange" onclick="moveSong(${index}, 'down')">▼</button>` : ""}
+                        ${index > 1 ? `
+                            <button class="queue-btn orange" onclick="moveSong(${index}, 'up')">▲</button>
+                        ` : ""}
+                        ${index > 0 && index < currentQueue.length - 1 ? `
+                            <button class="queue-btn orange" onclick="moveSong(${index}, 'down')">▼</button>
+                        ` : ""}
                         <button class="queue-btn red" onclick="deleteSong(${index})">🗑</button>
                     </div>
                 </div>
@@ -755,6 +796,9 @@
         }).join("");
     }
 
+    /* =========================================================
+       HELPERS
+    ========================================================= */
     function showToast(message) {
         const toast = document.getElementById("toast");
         toast.innerText = message;
