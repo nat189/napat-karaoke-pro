@@ -1,299 +1,348 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Napat Karaoke Pro - All in One</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root { 
-            --red: #ff2d55; 
-            --dark: #121212; 
-            --card: #1e1e1e; 
-            --green: #32d74b; 
-            --jbl-orange: #FF6A00; 
-        }
-        * { box-sizing: border-box; }
-        body { 
-            background: var(--dark); 
-            color: white; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            margin: 0; 
-            padding: 12px; 
-            padding-bottom: 80px; 
-            -webkit-user-select: none; 
-            user-select: none; 
-        }
-        .container { max-width: 600px; margin: 0 auto; }
-        
-        /* Video Container 16:9 */
-        .video-box {
-            position: relative;
-            width: 100%;
-            padding-top: 56.25%;
-            background: #000;
-            border-radius: 16px;
-            overflow: hidden;
-            margin-bottom: 12px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
-            border: 1px solid #2a2a2a;
-        }
-        .video-box iframe, .video-box #player {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-
-        /* Buttons */
-        .btn-skip { 
-            width: 100%; 
-            padding: 16px; 
-            background: linear-gradient(to right, #ff2d55, #ff5e3a); 
-            border: none; 
-            color: white; 
-            border-radius: 50px; 
-            font-weight: bold; 
-            font-size: 18px; 
-            margin-bottom: 8px; 
-            cursor: pointer; 
-            box-shadow: 0 4px 15px rgba(255, 45, 85, 0.3);
-        }
-        .btn-skip:active { transform: scale(0.98); opacity: 0.9; }
-        
-        .btn-pause { 
-            width: 100%; 
-            padding: 12px; 
-            border-radius: 14px; 
-            border: 1px solid #444; 
-            color: white; 
-            background: #5856d6; 
-            margin-bottom: 14px; 
-            font-weight: bold; 
-            font-size: 15px;
-            cursor: pointer; 
-        }
-        .btn-pause:active { opacity: 0.85; }
-
-        /* Search Box */
-        .search-box { display: flex; gap: 8px; margin-bottom: 16px; }
-        input { 
-            flex: 1; 
-            padding: 12px 16px; 
-            border-radius: 12px; 
-            border: 1px solid #333; 
-            background: #222; 
-            color: white; 
-            font-size: 15px; 
-            outline: none; 
-        }
-        input:focus { border-color: #007aff; }
-        .btn-search { 
-            padding: 0 20px; 
-            background: #007aff; 
-            border: none; 
-            color: white; 
-            border-radius: 12px; 
-            font-weight: bold; 
-            cursor: pointer; 
-        }
-
-        /* Queue & Items */
-        .queue-header { color: var(--green); font-weight: bold; font-size: 15px; margin-bottom: 10px; }
-        .queue-item { 
-            background: var(--card); 
-            padding: 12px 14px; 
-            border-radius: 14px; 
-            margin-bottom: 8px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border: 1px solid #2c2c2c; 
-        }
-        .playing { border: 1px solid var(--green); background: rgba(50, 215, 75, 0.08); }
-        .btn-move { background: #333; color: var(--jbl-orange); border: none; width: 40px; height: 40px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
-        .btn-reserve { background: #ff2d55; color: white; border: none; padding: 8px 16px; border-radius: 10px; font-weight: bold; font-size: 13px; cursor: pointer; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Napat Karaoke Pro - Single Screen</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 4px;
+    }
+  </style>
 </head>
-<body>
-    <div class="container">
-        <div class="video-box">
-            <div id="player"></div>
-        </div>
+<body class="h-screen flex flex-col overflow-hidden">
 
-        <button class="btn-skip" onclick="skipSong()">ข้ามเพลง ❯❯</button>
-        <button id="pause-btn" class="btn-pause" onclick="togglePlay()">⏸️ หยุดชั่วคราว</button>
-
-        <div class="search-box">
-            <input type="text" id="search-input" placeholder="ค้นหาเพลงคาราโอเกะ..." onkeypress="if(event.key==='Enter') searchMusic()">
-            <button class="btn-search" onclick="searchMusic()">ค้นหา</button>
-        </div>
-
-        <div id="results"></div>
-
-        <div class="queue-header">คิวเพลง (กดค้าง 2 วินาทีเพื่อลบ)</div>
-        <div id="queue-list">
-            <p style="color:#666; font-size:13px;">ยังไม่มีเพลงในคิว</p>
-        </div>
+  <!-- Header -->
+  <header class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between shadow-md">
+    <div class="flex items-center space-x-3">
+      <i class="fa-solid fa-microphone-lines text-red-500 text-2xl"></i>
+      <h1 class="text-xl font-bold tracking-wide text-white">Napat <span class="text-red-500">Karaoke Pro</span></h1>
     </div>
 
-    <script src="https://www.youtube.com/iframe_api"></script>
-    <script>
-        let player = null;
-        let queue = [];
-        let isPaused = false;
-        let pressTimer = null;
+    <!-- Quick Playback Controls -->
+    <div class="flex items-center space-x-3">
+      <button id="btnSkip" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm font-medium transition flex items-center gap-2 border border-slate-700">
+        <i class="fa-solid fa-forward"></i> ข้ามเพลง
+      </button>
+      <button id="btnRestart" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm font-medium transition flex items-center gap-2 border border-slate-700">
+        <i class="fa-solid fa-rotate-left"></i> ร้องใหม่
+      </button>
+    </div>
+  </header>
 
-        function onYouTubeIframeAPIReady() {
-            player = new YT.Player('player', {
-                height: '100%',
-                width: '100%',
-                playerVars: {
-                    'autoplay': 1,
-                    'controls': 1, // เปิดแถบควบคุมบนมือถือเพื่อความสะดวก
-                    'playsinline': 1, // บังคับให้เล่นในหน้าเว็บ ไม่เด้ง Fullscreen บน iPhone/iPad
-                    'rel': 0,
-                    'iv_load_policy': 3,
-                    'cc_load_policy': 0
-                },
-                events: {
-                    'onStateChange': (e) => {
-                        if (e.data === YT.PlayerState.ENDED) {
-                            skipSong();
-                        }
-                    }
-                }
-            });
+  <!-- Main Layout (2 Columns) -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- ฝั่งซ้าย: จอแสดงผลคาราโอเกะ (Video Player) -->
+    <div class="flex-1 flex flex-col bg-black p-4">
+      <div class="relative w-full h-full flex items-center justify-center rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl">
+        <div id="player" class="w-full h-full"></div>
+        
+        <!-- กรณีไม่มีเพลงกำลังเล่น -->
+        <div id="noVideoPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 text-slate-400">
+          <i class="fa-solid fa-music text-6xl mb-4 text-slate-600 animate-pulse"></i>
+          <p class="text-xl font-semibold text-slate-300">ยังไม่มีเพลงในคิว</p>
+          <p class="text-sm text-slate-500 mt-1">ค้นหาเพลงและกดเลือกเพื่อเริ่มร้องคาราโอเกะ</p>
+        </div>
+      </div>
+      
+      <!-- ข้อมูลเพลงที่กำลังเล่น -->
+      <div class="mt-3 py-2 px-4 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between">
+        <div class="truncate mr-4">
+          <span class="text-xs uppercase px-2 py-0.5 rounded bg-red-600 font-bold text-white tracking-wider mr-2">NOW PLAYING</span>
+          <span id="currentTitle" class="text-sm font-medium text-slate-200">ยังไม่มีเพลงกำลังเล่น</span>
+        </div>
+        <div id="queueCountBadge" class="text-xs text-slate-400 whitespace-nowrap bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+          คิวเพลง: 0 เพลง
+        </div>
+      </div>
+    </div>
+
+    <!-- ฝั่งขวา: ค้นหาเพลง + คิวเพลง -->
+    <div class="w-[420px] bg-slate-900 border-l border-slate-800 flex flex-col shadow-xl">
+      
+      <!-- ช่องค้นหาเพลง -->
+      <div class="p-4 border-b border-slate-800">
+        <form id="searchForm" class="relative">
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="ค้นหาชื่อเพลง, ศิลปิน..." 
+            class="w-full bg-slate-950 border border-slate-700 focus:border-red-500 focus:outline-none rounded-xl py-3 pl-11 pr-12 text-sm text-white placeholder-slate-500 transition"
+          />
+          <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i>
+          <button type="submit" class="absolute right-2 top-2 bg-red-600 hover:bg-red-700 text-white rounded-lg px-3 py-1.5 text-xs font-semibold transition">
+            ค้นหา
+          </button>
+        </form>
+      </div>
+
+      <!-- Tab Switcher (ผลการค้นหา / รายการคิว) -->
+      <div class="flex border-b border-slate-800 text-sm font-semibold bg-slate-950/40">
+        <button id="tabSearch" class="flex-1 py-3 text-center border-b-2 border-red-500 text-red-500 transition">
+          <i class="fa-solid fa-list mr-1"></i> ผลการค้นหา
+        </button>
+        <button id="tabQueue" class="flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition">
+          <i class="fa-solid fa-layer-group mr-1"></i> คิวเพลง (<span id="tabQueueCount">0</span>)
+        </button>
+      </div>
+
+      <!-- Tab Content 1: ผลการค้นหาเพลง -->
+      <div id="searchPanel" class="flex-1 overflow-y-auto p-3 custom-scroll">
+        <div id="searchLoading" class="hidden text-center py-10 text-slate-400">
+          <i class="fa-solid fa-circle-notch fa-spin text-2xl text-red-500 mb-2"></i>
+          <p class="text-sm">กำลังค้นหาเพลงคาราโอเกะ...</p>
+        </div>
+        <div id="searchDefault" class="text-center py-12 text-slate-500 text-sm">
+          พิมพ์ชื่อเพลงเพื่อค้นหาคาราโอเกะ
+        </div>
+        <div id="searchResults" class="space-y-2"></div>
+      </div>
+
+      <!-- Tab Content 2: คิวเพลง -->
+      <div id="queuePanel" class="hidden flex-1 overflow-y-auto p-3 custom-scroll">
+        <div id="queueEmpty" class="text-center py-12 text-slate-500 text-sm">
+          ยังไม่มีเพลงในคิว
+        </div>
+        <div id="queueList" class="space-y-2"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- YouTube IFrame API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <script>
+    let player = null;
+    let isPlayerReady = false;
+    let currentVideo = null;
+    let queue = [];
+
+    // Elements
+    const searchForm = document.getElementById('searchForm');
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+    const searchLoading = document.getElementById('searchLoading');
+    const searchDefault = document.getElementById('searchDefault');
+    const queueList = document.getElementById('queueList');
+    const queueEmpty = document.getElementById('queueEmpty');
+    const noVideoPlaceholder = document.getElementById('noVideoPlaceholder');
+    const currentTitle = document.getElementById('currentTitle');
+    const queueCountBadge = document.getElementById('queueCountBadge');
+    const tabQueueCount = document.getElementById('tabQueueCount');
+
+    const tabSearch = document.getElementById('tabSearch');
+    const tabQueue = document.getElementById('tabQueue');
+    const searchPanel = document.getElementById('searchPanel');
+    const queuePanel = document.getElementById('queuePanel');
+
+    // โหลด YouTube Player
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('player', {
+        height: '100%',
+        width: '100%',
+        playerVars: {
+          autoplay: 1,
+          controls: 1,
+          rel: 0,
+          modestbranding: 1
+        },
+        events: {
+          'onReady': onPlayerReady,
+          'onStateChange': onPlayerStateChange
         }
+      });
+    }
 
-        async function searchMusic() {
-            const q = document.getElementById('search-input').value.trim();
-            if (!q) return;
+    function onPlayerReady(event) {
+      isPlayerReady = true;
+    }
 
-            const resDiv = document.getElementById('results');
-            resDiv.innerHTML = '<p style="color:#888; text-align:center; padding:10px;">กำลังค้นหาเพลง...</p>';
+    // เมื่อเพลงเล่นจบ ให้ข้ามไปเพลงถัดไปในคิวอัตโนมัติ
+    function onPlayerStateChange(event) {
+      if (event.data === YT.PlayerState.ENDED) {
+        playNext();
+      }
+    }
 
-            try {
-                const res = await fetch(`/search?q=${encodeURIComponent(q)}`);
-                const data = await res.json();
+    // สลับ Tabs
+    tabSearch.addEventListener('click', () => {
+      tabSearch.className = "flex-1 py-3 text-center border-b-2 border-red-500 text-red-500 transition";
+      tabQueue.className = "flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition";
+      searchPanel.classList.remove('hidden');
+      queuePanel.classList.add('hidden');
+    });
 
-                if (!data || data.length === 0) {
-                    resDiv.innerHTML = '<p style="color:#777; text-align:center; padding:10px;">ไม่พบเพลง</p>';
-                    return;
-                }
+    tabQueue.addEventListener('click', () => {
+      tabQueue.className = "flex-1 py-3 text-center border-b-2 border-red-500 text-red-500 transition";
+      tabSearch.className = "flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition";
+      queuePanel.classList.remove('hidden');
+      searchPanel.classList.add('hidden');
+    });
 
-                resDiv.innerHTML = data.map(s => `
-                    <div style="background:#1e1e1e; padding:10px; border-radius:12px; margin-bottom:8px; display:flex; align-items:center; gap:10px; border:1px solid #333;">
-                        <img src="${s.thumbnail}" width="65" height="45" style="border-radius:6px; object-fit:cover; background:#000;">
-                        <div style="flex:1; min-width:0;">
-                            <div style="font-size:13px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.title}</div>
-                            <small style="color:#888; font-size:11px;">${s.author || ''}</small>
-                        </div>
-                        <button class="btn-reserve" onclick='addSong(${JSON.stringify(s).replace(/'/g, "&apos;")})'>จอง</button>
-                    </div>
-                `).join('');
-            } catch (err) {
-                resDiv.innerHTML = '<p style="color:var(--red); text-align:center; padding:10px;">ค้นหาล้มเหลว</p>';
-            }
+    // ยิงค้นหาผ่าน Cloudflare Functions: /api/search?q=...
+    searchForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const q = searchInput.value.trim();
+      if (!q) return;
+
+      searchDefault.classList.add('hidden');
+      searchLoading.classList.remove('hidden');
+      searchResults.innerHTML = '';
+
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+
+        searchLoading.classList.add('hidden');
+        if (data.success && data.results && data.results.length > 0) {
+          renderSearchResults(data.results);
+        } else {
+          searchResults.innerHTML = `<div class="text-center py-8 text-slate-500 text-sm">ไม่พบผลการค้นหา</div>`;
         }
+      } catch (err) {
+        searchLoading.classList.add('hidden');
+        searchResults.innerHTML = `<div class="text-center py-8 text-red-400 text-sm">เกิดข้อผิดพลาดในการค้นหา</div>`;
+      }
+    });
 
-        function addSong(song) {
-            queue.push(song);
-            document.getElementById('results').innerHTML = '';
-            document.getElementById('search-input').value = '';
-            renderQueue();
-            if (queue.length === 1) {
-                playCurrent();
-            }
+    // แสดงผลลัพธ์การค้นหา
+    function renderSearchResults(items) {
+      searchResults.innerHTML = '';
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = "p-2 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-slate-700 flex items-center justify-between gap-3 transition group";
+        div.innerHTML = `
+          <div class="flex items-center gap-3 overflow-hidden">
+            <img src="${item.thumbnail}" class="w-16 h-12 object-cover rounded-lg flex-shrink-0 bg-slate-800">
+            <div class="truncate">
+              <div class="text-xs font-semibold text-slate-200 truncate group-hover:text-white">${item.title}</div>
+              <div class="text-[11px] text-slate-400 truncate mt-0.5">${item.channel} • ${item.duration || ''}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <button onclick='addToQueue(${JSON.stringify(item)}, true)' class="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition" title="เล่นทันที">
+              <i class="fa-solid fa-play"></i>
+            </button>
+            <button onclick='addToQueue(${JSON.stringify(item)}, false)' class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition border border-slate-700" title="ต่อคิว">
+              + คิว
+            </button>
+          </div>
+        `;
+        searchResults.appendChild(div);
+      });
+    }
+
+    // จัดการคิวเพลง
+    function addToQueue(item, playNow = false) {
+      if (playNow) {
+        if (currentVideo) {
+          queue.unshift(item);
+          playNext();
+        } else {
+          startPlaying(item);
         }
-
-        function playCurrent() {
-            if (queue.length > 0) {
-                const current = queue[0];
-                if (player && typeof player.loadVideoById === 'function') {
-                    player.loadVideoById(current.videoId);
-                }
-            } else {
-                if (player && typeof player.stopVideo === 'function') {
-                    player.stopVideo();
-                }
-            }
-            renderQueue();
+      } else {
+        if (!currentVideo) {
+          startPlaying(item);
+        } else {
+          queue.push(item);
+          updateQueueUI();
         }
+      }
+    }
 
-        function skipSong() {
-            if (queue.length > 0) {
-                queue.shift();
-                playCurrent();
-            }
+    function startPlaying(item) {
+      currentVideo = item;
+      noVideoPlaceholder.classList.add('hidden');
+      currentTitle.innerText = item.title;
+
+      if (isPlayerReady && player) {
+        player.loadVideoById(item.videoId);
+      }
+      updateQueueUI();
+    }
+
+    function playNext() {
+      if (queue.length > 0) {
+        const next = queue.shift();
+        startPlaying(next);
+      } else {
+        currentVideo = null;
+        currentTitle.innerText = "ยังไม่มีเพลงกำลังเล่น";
+        noVideoPlaceholder.classList.remove('hidden');
+        if (isPlayerReady && player) {
+          player.stopVideo();
         }
+        updateQueueUI();
+      }
+    }
 
-        function togglePlay() {
-            if (!player || typeof player.getPlayerState !== 'function') return;
-            isPaused = !isPaused;
-            if (isPaused) {
-                player.pauseVideo();
-            } else {
-                player.playVideo();
-            }
-            document.getElementById('pause-btn').innerText = isPaused ? "▶️ เล่นต่อ" : "⏸️ หยุดชั่วคราว";
-        }
+    function removeFromQueue(index) {
+      queue.splice(index, 1);
+      updateQueueUI();
+    }
 
-        function delSong(index, title) {
-            if (confirm(`ลบเพลง "${title}" ออกจากคิว?`)) {
-                queue.splice(index, 1);
-                if (index === 0) {
-                    playCurrent();
-                } else {
-                    renderQueue();
-                }
-            }
-        }
+    function updateQueueUI() {
+      queueCountBadge.innerText = `คิวเพลง: ${queue.length} เพลง`;
+      tabQueueCount.innerText = queue.length;
 
-        function moveSong(index, dir) {
-            const target = dir === 'up' ? index - 1 : index + 1;
-            if (target >= 1 && target < queue.length) {
-                const temp = queue[index];
-                queue[index] = queue[target];
-                queue[target] = temp;
-                renderQueue();
-            }
-        }
+      if (queue.length === 0) {
+        queueEmpty.classList.remove('hidden');
+        queueList.innerHTML = '';
+        return;
+      }
 
-        function retryPlay() {
-            if (player && typeof player.seekTo === 'function') {
-                player.seekTo(0, true);
-                player.playVideo();
-            }
-        }
+      queueEmpty.classList.add('hidden');
+      queueList.innerHTML = '';
 
-        function renderQueue() {
-            const list = document.getElementById('queue-list');
-            if (queue.length === 0) {
-                list.innerHTML = '<p style="color:#666; font-size:13px;">ยังไม่มีเพลงในคิว</p>';
-                return;
-            }
+      queue.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = "p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3";
+        div.innerHTML = `
+          <div class="flex items-center gap-3 overflow-hidden">
+            <span class="text-xs font-bold text-slate-500 w-4 text-center">${index + 1}</span>
+            <img src="${item.thumbnail}" class="w-12 h-9 object-cover rounded-md flex-shrink-0 bg-slate-800">
+            <div class="truncate">
+              <div class="text-xs font-medium text-slate-200 truncate">${item.title}</div>
+              <div class="text-[10px] text-slate-500 truncate">${item.channel}</div>
+            </div>
+          </div>
+          <button onclick="removeFromQueue(${index})" class="text-slate-500 hover:text-red-400 p-1.5 transition">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        `;
+        queueList.appendChild(div);
+      });
+    }
 
-            list.innerHTML = queue.map((s, i) => `
-                <div class="queue-item ${i === 0 ? 'playing' : ''}"
-                     ontouchstart="pressTimer=setTimeout(()=>delSong(${i},'${s.title.replace(/'/g, "")}'), 2000)" 
-                     ontouchend="clearTimeout(pressTimer)" 
-                     onmousedown="pressTimer=setTimeout(()=>delSong(${i},'${s.title.replace(/'/g, "")}'), 2000)" 
-                     onmouseup="clearTimeout(pressTimer)">
-                    <div style="flex:1; min-width:0; padding-right:8px;">
-                        <small style="color:var(--green); font-weight:bold;">${i === 0 ? 'กำลังเล่น' : 'คิวที่ ' + (i + 1)}</small>
-                        <div style="font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">${s.title}</div>
-                    </div>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        ${i === 0 ? `<button style="background:#fff; border:none; padding:6px 10px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;" onclick="retryPlay()">เริ่มใหม่</button>` : ''}
-                        ${i > 0 ? `<button class="btn-move" onclick="event.stopPropagation(); moveSong(${i}, 'up')">▲</button>` : ''}
-                        ${i > 0 && i < queue.length - 1 ? `<button class="btn-move" onclick="event.stopPropagation(); moveSong(${i}, 'down')">▼</button>` : ''}
-                    </div>
-                </div>
-            `).join('');
-        }
-    </script>
+    // ปุ่มควบคุม
+    document.getElementById('btnSkip').addEventListener('click', () => {
+      playNext();
+    });
+
+    document.getElementById('btnRestart').addEventListener('click', () => {
+      if (currentVideo && isPlayerReady && player) {
+        player.seekTo(0);
+        player.playVideo();
+      }
+    });
+  </script>
 </body>
 </html>
