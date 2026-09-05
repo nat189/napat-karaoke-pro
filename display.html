@@ -359,7 +359,7 @@
 
         #qr-panel {
             position: absolute;
-            top: 90px;
+            bottom: 28px;
             right: 28px;
             width: 210px;
             padding: 15px;
@@ -639,7 +639,7 @@
 
             #qr-panel {
                 right: 14px;
-                top: 72px;
+                bottom: 14px;
             }
 
             .brand-text {
@@ -777,7 +777,7 @@
              NOW PLAYING
         ====================================================== -->
 
-        <div id="now-playing">
+        <div id="now-playing" class="hidden">
 
             <div class="now-label">
                 NOW PLAYING
@@ -925,6 +925,9 @@
         let nextSongTimer = null;
 
         let uiTimer = null;
+
+        // Timer เฉพาะ NOW PLAYING — แสดง 8 วินาทีหลังเริ่มเพลง
+        let nowPlayingTimer = null;
 
         let scoreTimer = null;
 
@@ -1441,9 +1444,12 @@
             const current =
                 queue[0];
 
-            nowPlaying.classList.remove(
-                "hidden"
-            );
+            /*
+             * สำคัญ:
+             * updateQueueUI() ห้ามเปิด NOW PLAYING
+             * เพราะการเพิ่มเพลงเข้าคิวไม่ใช่การเริ่มเพลง
+             * NOW PLAYING จะถูกเปิดจาก playCurrent() เท่านั้น
+             */
 
             document.getElementById(
                 "now-title"
@@ -1670,6 +1676,10 @@
                 nextSongTimer
             );
 
+            clearTimeout(
+                nowPlayingTimer
+            );
+
             hideScore();
 
             stopScoreWatcher();
@@ -1858,9 +1868,21 @@
             ).style.display =
                 "none";
 
-            document.getElementById(
-                "now-playing"
-            ).classList.remove(
+            /*
+             * NOW PLAYING:
+             * แสดงเฉพาะตอนเริ่มเล่นเพลง
+             * และซ่อนอัตโนมัติหลัง 8 วินาที
+             */
+            const nowPlaying =
+                document.getElementById(
+                    "now-playing"
+                );
+
+            clearTimeout(
+                nowPlayingTimer
+            );
+
+            nowPlaying.classList.remove(
                 "hidden"
             );
 
@@ -1875,6 +1897,16 @@
             ).innerText =
                 current.channel ||
                 "";
+
+            nowPlayingTimer =
+                setTimeout(
+                    () => {
+                        nowPlaying.classList.add(
+                            "hidden"
+                        );
+                    },
+                    8000
+                );
 
             if (
                 player &&
@@ -2087,6 +2119,10 @@
             /*
              * ซ่อน Now Playing
              */
+            clearTimeout(
+                nowPlayingTimer
+            );
+
             document.getElementById(
                 "now-playing"
             ).classList.add(
@@ -2671,12 +2707,10 @@
                 "hidden"
             );
 
-            document.getElementById(
-                "now-playing"
-            ).classList.remove(
-                "hidden"
-            );
-
+            /*
+             * NOW PLAYING มี timer ของตัวเอง 8 วินาที
+             * showUI() จะไม่เปิดกลับมาเอง
+             */
             document.getElementById(
                 "queue-box"
             ).classList.remove(
