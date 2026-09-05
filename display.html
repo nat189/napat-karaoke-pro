@@ -44,23 +44,60 @@
             flex: 1;
             position: relative;
             background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        }
+
+        #player {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
         }
 
         .video-placeholder {
-            text-align: center;
+            position: absolute;
+            inset: 0;
+
+            display: flex;
+            flex-direction: column;
+
+            align-items: center;
+            justify-content: center;
+
             color: #555;
+
+            pointer-events: none;
         }
 
         .video-placeholder .icon {
             font-size: 80px;
-            margin-bottom: 15px;
         }
 
         .video-placeholder .text {
             font-size: 28px;
+            margin-top: 10px;
+        }
+
+        /* =========================
+           ROOM
+        ========================= */
+
+        .room {
+            position: absolute;
+
+            top: 20px;
+            right: 25px;
+
+            padding: 8px 15px;
+
+            background: rgba(0, 0, 0, 0.7);
+
+            border-radius: 20px;
+
+            color: #aaa;
+
+            font-size: 14px;
+
+            z-index: 10;
         }
 
         /* =========================
@@ -69,22 +106,31 @@
 
         .now-playing {
             min-height: 120px;
+
             padding: 20px 40px;
+
             background: #111;
+
             border-top: 1px solid #222;
         }
 
         .now-label {
             color: #e91e63;
+
             font-size: 18px;
+
             margin-bottom: 8px;
         }
 
         .now-title {
             font-size: 32px;
+
             font-weight: bold;
+
             white-space: nowrap;
+
             overflow: hidden;
+
             text-overflow: ellipsis;
         }
 
@@ -94,86 +140,64 @@
 
         .queue {
             height: 180px;
+
             padding: 15px 40px;
+
             background: #181818;
+
             overflow: hidden;
         }
 
         .queue-title {
             font-size: 20px;
+
             margin-bottom: 10px;
         }
 
         .queue-list {
             display: flex;
+
             gap: 15px;
+
             overflow: hidden;
         }
 
         .queue-item {
             min-width: 300px;
+
             padding: 12px;
+
             background: #242424;
+
             border-radius: 10px;
         }
 
         .queue-number {
             color: #e91e63;
+
             font-size: 20px;
+
             font-weight: bold;
         }
 
         .queue-song {
             margin-top: 5px;
+
             font-size: 17px;
+
             white-space: nowrap;
+
             overflow: hidden;
+
             text-overflow: ellipsis;
         }
 
         .queue-channel {
             margin-top: 5px;
+
             color: #888;
+
             font-size: 13px;
-        }
-
-        /* =========================
-           ROOM
-        ========================= */
-
-        .room {
-            position: absolute;
-            top: 20px;
-            right: 25px;
-            padding: 8px 15px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 20px;
-            color: #aaa;
-            font-size: 14px;
-        }
-
-        /* =========================
-           MOBILE / SMALL SCREEN
-        ========================= */
-
-        @media (max-width: 800px) {
-
-            .now-playing {
-                padding: 15px 20px;
-            }
-
-            .now-title {
-                font-size: 24px;
-            }
-
-            .queue {
-                padding: 12px 20px;
-            }
-
-            .queue-item {
-                min-width: 240px;
-            }
-
         }
 
     </style>
@@ -183,9 +207,13 @@
 
 <body>
 
+
 <div class="screen">
 
-    <!-- VIDEO -->
+
+    <!-- =========================
+         VIDEO
+    ========================= -->
 
     <div class="video-area">
 
@@ -193,7 +221,12 @@
             ROOM: ----
         </div>
 
-        <div class="video-placeholder">
+        <div id="player"></div>
+
+        <div
+            id="placeholder"
+            class="video-placeholder"
+        >
 
             <div class="icon">
                 🎤
@@ -208,7 +241,9 @@
     </div>
 
 
-    <!-- NOW PLAYING -->
+    <!-- =========================
+         NOW PLAYING
+    ========================= -->
 
     <div class="now-playing">
 
@@ -226,7 +261,9 @@
     </div>
 
 
-    <!-- QUEUE -->
+    <!-- =========================
+         QUEUE
+    ========================= -->
 
     <div class="queue">
 
@@ -247,23 +284,147 @@
 
     </div>
 
+
 </div>
 
 
 <script>
 
+/*
+ * ==========================================
+ * TEST SONG
+ * ==========================================
+ *
+ * ตอนนี้ใช้เพลงทดสอบก่อน
+ *
+ * อ้ายมาส่งทาง - มนต์แคน แก่นคูน
+ *
+ */
+
+const TEST_VIDEO_ID =
+    "kn1Bg_yMB4M";
+
+const TEST_TITLE =
+    "อ้ายมาส่งทาง - มนต์แคน แก่นคูน";
+
+
+/*
+ * ==========================================
+ * YOUTUBE IFRAME API
+ * ==========================================
+ */
+
+let player;
+
+
+/*
+ * โหลด YouTube API
+ */
+
+const tag =
+    document.createElement("script");
+
+tag.src =
+    "https://www.youtube.com/iframe_api";
+
+document
+    .head
+    .appendChild(tag);
+
+
+/*
+ * YouTube เรียก function นี้
+ * หลัง API โหลดเสร็จ
+ */
+
+function onYouTubeIframeAPIReady() {
+
+    player =
+        new YT.Player(
+            "player",
+            {
+
+                videoId:
+                    TEST_VIDEO_ID,
+
+                playerVars: {
+
+                    autoplay: 1,
+
+                    controls: 1,
+
+                    rel: 0,
+
+                    modestbranding: 1,
+
+                    playsinline: 1
+
+                },
+
+                events: {
+
+                    onReady:
+                        onPlayerReady,
+
+                    onStateChange:
+                        onPlayerStateChange
+
+                }
+
+            }
+        );
+
+}
+
+
+/*
+ * Player พร้อม
+ */
+
+function onPlayerReady(event) {
+
+    document
+        .getElementById("placeholder")
+        .style.display = "none";
+
+    document
+        .getElementById("nowTitle")
+        .textContent =
+            TEST_TITLE;
+
+}
+
+
+/*
+ * ตรวจสถานะเพลง
+ */
+
+function onPlayerStateChange(event) {
+
     /*
-     * STEP 6.1
+     * 0 = เพลงจบ
      *
-     * ตอนนี้เป็นเพียง UI
+     * ตอนนี้ยังไม่ทำอะไร
      *
-     * ยังไม่เชื่อม Queue
-     * และยังไม่เปิด YouTube
-     *
-     * เราจะต่อใน STEP 6.2
+     * STEP ต่อไปจะให้
+     * Queue เล่นเพลงถัดไปอัตโนมัติ
      */
 
+    if (
+        event.data ===
+        YT.PlayerState.ENDED
+    ) {
+
+        console.log(
+            "Song ended"
+        );
+
+    }
+
+}
+
 </script>
+
 
 </body>
 
