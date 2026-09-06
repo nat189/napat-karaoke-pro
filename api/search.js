@@ -1,6 +1,10 @@
-export async function onRequest(context) {
-  const { searchParams } = new URL(context.request.url);
-  const rawQuery = searchParams.get("q");
+export const config = {
+  runtime: 'edge',
+};
+
+export default async function handler(request) {
+  const { searchParams } = new URL(request.url);
+  const q = searchParams.get("q");
 
   const headers = {
     "Content-Type": "application/json; charset=utf-8",
@@ -9,11 +13,11 @@ export async function onRequest(context) {
     "Cache-Control": "public, max-age=300",
   };
 
-  if (context.request.method === "OPTIONS") {
+  if (request.method === "OPTIONS") {
     return new Response(null, { headers });
   }
 
-  if (!rawQuery) {
+  if (!q) {
     return new Response(
       JSON.stringify({ items: [], results: [], songs: [] }),
       { status: 200, headers }
@@ -21,83 +25,75 @@ export async function onRequest(context) {
   }
 
   try {
-    let searchQuery = rawQuery.trim();
-    const hasKaraokeKeyword =
-      /karaoke|คาราโอเกะ|เนื้อเพลง|backing track|ตัดเสียง/i.test(searchQuery);
-    if (!hasKaraokeKeyword) {
-      searchQuery += " คาราโอเกะ";
-    }
+    const searchQuery = `${q.trim()} คาราโอเกะ`;
+    const YT_KEY = 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
 
-    const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`;
-    const response = await fetch(ytUrl, {
+    const res = await fetch(`https://www.youtube.com/youtubei/v1/search?key=${YT_KEY}`, {
+      method: 'POST',
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept-Language": "th,en-US;q=0.9,en;q=0.8",
+        'Content-Type': 'application/json',
+        'User-Agent': 'com.google.android.youtube/19.26.35 (Linux; U; Android 11; gzip)',
       },
+      body: JSON.stringify({
+        context: {
+          client: {
+            clientName: 'ANDROID',
+            clientVersion: '19.26.35',
+            hl: 'th',
+            gl: 'TH',
+          }
+        },
+        query: searchQuery
+      })
     });
 
-    const html = await response.text();
-    const match =
-      html.match(/var ytInitialData = ({.*?});<\/script>/s) ||
-      html.match(/ytInitialData\s*=\s*({.+?});/s);
-
-    if (!match) {
-      return new Response(
-        JSON.stringify({ items: [], results: [], songs: [] }),
-        { status: 200, headers }
-      );
+    if (!res.ok) {
+      throw new Error(`YouTube API returned ${res.status}`);
     }
 
-    const data = JSON.parse(match[1]);
+    const data = await res.json();
     const contents =
-      data.contents?.twoColumnSearchResultsRenderer?.primaryContents
-        ?.sectionListRenderer?.contents[0]?.itemSectionRenderer?.contents || [];
+      data?.contents?.twoColumnSearchResultsRenderer?.primaryContents
+        ?.sectionListRenderer?.contents?.[0]?.itemSectionRenderer?.contents ||
+      data?.contents?.sectionListRenderer?.contents?.[0]?.itemSectionRenderer
+        ?.contents ||
+      [];
 
-    const rawVideos = [];
+    const results = [];
     for (const item of contents) {
-      const v = item.videoRenderer;
-      if (v && v.videoId && v.title?.runs?.[0]?.text) {
-        const thumb =
-          v.thumbnail?.thumbnails?.[0]?.url ||
-          `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`;
-        const titleText = v.title.runs[0].text;
-        const authorText = v.ownerText?.runs?.[0]?.text || "";
+      const v = item.videoRenderer || item.compactVideoRenderer;
+      if (v && v.videoId) {
+        const titleText =
+          v.title?.runs?.[0]?.text || v.title?.simpleText || "";
+        const authorText =
+          v.ownerText?.runs?.[0]?.text ||
+          v.shortBylineText?.runs?.[0]?.text ||
+          "";
         const timeText = v.lengthText?.simpleText || "";
+        const thumb = `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`;
 
-        rawVideos.push({
+        results.push({
           videoId: v.videoId,
           id: v.videoId,
           title: titleText,
           thumbnail: thumb,
           thumb: thumb,
-          timestamp: timeText,
-          duration: timeText,
           author: authorText,
           channel: authorText,
+          timestamp: timeText,
+          duration: timeText,
         });
       }
     }
 
-    const karaokeKeywords =
-      /คาราโอเกะ|karaoke|คีย์|ดนตรี|backing track|ตัดเสียง|midi|เนื้อเพลง|ไม่มีเสียงร้อง/i;
+    const finalData = results.slice(0, 20);
 
-    const karaokeList = rawVideos.filter(
-      (v) => karaokeKeywords.test(v.title) || karaokeKeywords.test(v.author)
-    );
-    const others = rawVideos.filter(
-      (v) => !karaokeKeywords.test(v.title) && !karaokeKeywords.test(v.author)
-    );
-
-    const finalResults = [...karaokeList, ...others].slice(0, 20);
-
-    // ครอบส่งกลับเป็น Object ทุกคีย์ เพื่อให้ controller.html อ่านผ่านฉลุย
     return new Response(
       JSON.stringify({
-        items: finalResults,
-        results: finalResults,
-        songs: finalResults,
-        data: finalResults,
+        items: finalData,
+        results: finalData,
+        songs: finalData,
+        data: finalData,
       }),
       {
         status: 200,
@@ -105,11 +101,13 @@ export async function onRequest(context) {
       }
     );
   } catch (err) {
+    // ป้องกันหน้าเว็บขึ้น Error 500
     return new Response(
       JSON.stringify({
-        error: err.message || "Search failed",
         items: [],
         results: [],
+        songs: [],
+        error: err.message,
       }),
       {
         status: 200,
