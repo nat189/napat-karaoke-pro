@@ -7,7 +7,7 @@ export default async function handler(request) {
   const rawQuery = searchParams.get("q");
 
   const headers = {
-    "Content-Type": "application/json",
+    "Content-Type": "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
     "Cache-Control": "public, max-age=300",
@@ -18,10 +18,10 @@ export default async function handler(request) {
   }
 
   if (!rawQuery) {
-    return new Response(JSON.stringify({ error: "กรุณาระบุคำค้นหา" }), {
-      status: 400,
-      headers,
-    });
+    return new Response(
+      JSON.stringify({ items: [], results: [], songs: [] }),
+      { status: 200, headers }
+    );
   }
 
   try {
@@ -47,7 +47,10 @@ export default async function handler(request) {
       html.match(/ytInitialData\s*=\s*({.+?});/s);
 
     if (!match) {
-      return new Response(JSON.stringify([]), { status: 200, headers });
+      return new Response(
+        JSON.stringify({ items: [], results: [], songs: [] }),
+        { status: 200, headers }
+      );
     }
 
     const data = JSON.parse(match[1]);
@@ -59,12 +62,23 @@ export default async function handler(request) {
     for (const item of contents) {
       const v = item.videoRenderer;
       if (v && v.videoId && v.title?.runs?.[0]?.text) {
+        const thumb =
+          v.thumbnail?.thumbnails?.[0]?.url ||
+          `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`;
+        const titleText = v.title.runs[0].text;
+        const authorText = v.ownerText?.runs?.[0]?.text || "";
+        const timeText = v.lengthText?.simpleText || "";
+
         rawVideos.push({
           videoId: v.videoId,
-          title: v.title.runs[0].text,
-          thumbnail: v.thumbnail?.thumbnails?.[0]?.url || "",
-          timestamp: v.lengthText?.simpleText || "",
-          author: v.ownerText?.runs?.[0]?.text || "",
+          id: v.videoId,
+          title: titleText,
+          thumbnail: thumb,
+          thumb: thumb,
+          timestamp: timeText,
+          duration: timeText,
+          author: authorText,
+          channel: authorText,
         });
       }
     }
@@ -81,15 +95,28 @@ export default async function handler(request) {
 
     const finalResults = [...karaokeList, ...others].slice(0, 20);
 
-    return new Response(JSON.stringify(finalResults), {
-      status: 200,
-      headers,
-    });
+    // ครอบส่งกลับเป็น Object เพื่อให้ controller.html ทุกเงื่อนไขอ่านผ่าน 100%
+    return new Response(
+      JSON.stringify({
+        items: finalResults,
+        results: finalResults,
+        songs: finalResults,
+        data: finalResults,
+      }),
+      {
+        status: 200,
+        headers,
+      }
+    );
   } catch (err) {
     return new Response(
-      JSON.stringify({ error: err.message || "Search failed" }),
+      JSON.stringify({
+        error: err.message || "Search failed",
+        items: [],
+        results: [],
+      }),
       {
-        status: 500,
+        status: 200,
         headers,
       }
     );
