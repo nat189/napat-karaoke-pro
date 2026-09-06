@@ -1,9 +1,5 @@
-export const config = {
-  runtime: 'edge',
-};
-
-export default async function handler(request) {
-  const { searchParams } = new URL(request.url);
+export async function onRequest(context) {
+  const { searchParams } = new URL(context.request.url);
   const rawQuery = searchParams.get("q");
 
   const headers = {
@@ -13,12 +9,15 @@ export default async function handler(request) {
     "Cache-Control": "public, max-age=300",
   };
 
-  if (request.method === "OPTIONS") {
+  if (context.request.method === "OPTIONS") {
     return new Response(null, { headers });
   }
 
-  if (!rawQuery || !rawQuery.trim()) {
-    return new Response(JSON.stringify([]), { status: 200, headers });
+  if (!rawQuery) {
+    return new Response(
+      JSON.stringify({ items: [], results: [], songs: [] }),
+      { status: 200, headers }
+    );
   }
 
   try {
@@ -39,41 +38,21 @@ export default async function handler(request) {
     });
 
     const html = await response.text();
+    const match =
+      html.match(/var ytInitialData = ({.*?});<\/script>/s) ||
+      html.match(/ytInitialData\s*=\s*({.+?});/s);
 
-    // ดึง ytInitialData แบบปลอดภัย ไม่ใช้ Regex ตัดตอน เพื่อป้องกัน JSON.parse พัง
-    let data = null;
-    const markers = ['var ytInitialData = ', 'ytInitialData = ', 'window["ytInitialData"] = '];
-    for (const marker of markers) {
-      const idx = html.indexOf(marker);
-      if (idx !== -1) {
-        const endIdx = html.indexOf('</script>', idx);
-        if (endIdx !== -1) {
-          let raw = html.slice(idx + marker.length, endIdx).trim();
-          if (raw.endsWith(';')) raw = raw.slice(0, -1).trim();
-          try {
-            data = JSON.parse(raw);
-            break;
-          } catch (e) {}
-        }
-      }
+    if (!match) {
+      return new Response(
+        JSON.stringify({ items: [], results: [], songs: [] }),
+        { status: 200, headers }
+      );
     }
 
-    if (!data) {
-      return new Response(JSON.stringify([]), { status: 200, headers });
-    }
-
-    // วนหา itemSectionRenderer ทุก section (แก้ปัญหาคำสั้นๆ ที่ YouTube แทรกโฆษณา/แท็กมาบังช่องแรก)
-    const sections =
+    const data = JSON.parse(match[1]);
+    const contents =
       data.contents?.twoColumnSearchResultsRenderer?.primaryContents
-        ?.sectionListRenderer?.contents || [];
-
-    let contents = [];
-    for (const sec of sections) {
-      if (sec.itemSectionRenderer?.contents) {
-        contents = sec.itemSectionRenderer.contents;
-        break;
-      }
-    }
+        ?.sectionListRenderer?.contents[0]?.itemSectionRenderer?.contents || [];
 
     const rawVideos = [];
     for (const item of contents) {
@@ -112,16 +91,30 @@ export default async function handler(request) {
 
     const finalResults = [...karaokeList, ...others].slice(0, 20);
 
-    // ส่งกลับเป็น Array [...] ตรงๆ ตามที่ controller.html ต้องการ
-    return new Response(JSON.stringify(finalResults), {
-      status: 200,
-      headers,
-    });
+    // ครอบส่งกลับเป็น Object ทุกคีย์ เพื่อให้ controller.html อ่านผ่านฉลุย
+    return new Response(
+      JSON.stringify({
+        items: finalResults,
+        results: finalResults,
+        songs: finalResults,
+        data: finalResults,
+      }),
+      {
+        status: 200,
+        headers,
+      }
+    );
   } catch (err) {
-    // หากเกิด Error ให้ส่ง Array ว่าง [] เสมอ เพื่อป้องกันไม่ให้หน้ารีโมตแจ้งเตือน "รูปแบบข้อมูลไม่ถูกต้อง"
-    return new Response(JSON.stringify([]), {
-      status: 200,
-      headers,
-    });
+    return new Response(
+      JSON.stringify({
+        error: err.message || "Search failed",
+        items: [],
+        results: [],
+      }),
+      {
+        status: 200,
+        headers,
+      }
+    );
   }
 }
