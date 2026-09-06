@@ -381,14 +381,18 @@
             pointer-events: none;
         }
 
-       #qrcode {
-            width: 170px;
-            height: 170px;
-            margin: 0 auto 10px;
-            padding: 10px;
-            background: #fff;
-            border-radius: 12px;
-        }
+        #qrcode {
+         width: 180px;
+         height: 180px;
+         margin: 0 auto 10px;
+         padding: 10px;
+         background: #fff;
+         border-radius: 14px;
+         box-sizing: border-box; /* บังคับให้ padding รวมอยู่ในขนาด 180px ไม่ดันทะลุ */
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         }
 
         #qrcode img {
             display: block;
