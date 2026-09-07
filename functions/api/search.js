@@ -47,11 +47,21 @@ async function handleRequest(request) {
     }
 
     try {
-        // ค้นหาคำค้นหา + คาราโอเกะ ตามสูตร Python
-        const searchQuery = `${q} คาราโอเกะ`;
-        const rawResults = await searchYouTube(searchQuery);
+        // ค้นหาทั้งคำไทยและสากลควบคู่กันเพื่อผลลัพธ์ที่ครอบคลุม
+        const queries = [
+            `${q} คาราโอเกะ`,
+            `${q} karaoke`
+        ];
 
-        // Deduplicate ตาม videoId พร้อมคงลำดับดั้งเดิม (originalIndex)
+        const settledResponses = await Promise.allSettled(
+            queries.map(query => searchYouTube(query))
+        );
+
+        const rawResults = settledResponses
+            .filter(res => res.status === 'fulfilled')
+            .flatMap(res => res.value);
+
+        // Deduplicate ตาม videoId พร้อมเก็บบันทึกลำดับดั้งเดิม
         const unique = new Map();
         rawResults.forEach((item, index) => {
             if (!item.videoId) return;
@@ -60,7 +70,7 @@ async function handleRequest(request) {
             }
         });
 
-        // กำหนดชุดคีย์เวิร์ดตามสคริปต์ Python
+        // คีย์เวิร์ดคัดกรองตามตรรกะ Python
         const MV_KEYWORDS = [
             "OFFICIAL MV", "OFFICIAL MUSIC VIDEO", "MUSIC VIDEO",
             "[MV]", "(MV)", " TEASER ", "REACTION"
@@ -86,7 +96,7 @@ async function handleRequest(request) {
             const channel = entry.channel || "";
             const channelUpper = channel.toUpperCase();
 
-            // กรอง MV ออก ยกเว้นคลิปนั้นจะระบุชัดเจนว่าเป็น Karaoke
+            // 1. กรอง MV ออก ยกเว้นคลิปนั้นจะระบุชัดว่าเป็น Karaoke
             const isKaraoke = titleUpper.includes("KARAOKE") || title.includes("คาราโอเกะ");
             const isPureMV = MV_KEYWORDS.some(kw => titleUpper.includes(kw)) && !isKaraoke;
             if (isPureMV) {
@@ -95,30 +105,30 @@ async function handleRequest(request) {
 
             let score = 0;
 
-            // 1. คะแนนความตรงของชื่อเพลง (ตัวตัดสินหลัก)
+            // 2. คะแนนความตรงของชื่อเพลง (คำนวณตามสูตร)
             score += calculateTitleRelevance(title, q);
 
-            // 2. คะแนนอันดับความนิยมดั้งเดิมจาก YouTube
+            // 3. คะแนนอันดับความนิยมดั้งเดิมจาก YouTube
             score += Math.max(0, 25 - entry.originalIndex);
 
-            // 3. คะแนนช่อง Official GMM & RS
+            // 4. คะแนนช่อง Official GMM & RS
             if (GMM_RS_CHANNELS.some(ch => channelUpper.includes(ch))) {
                 score += 15;
             } else if (["GMM", "GRAMMY", "GENIE", "RS", "อาร์สยาม"].some(kw => titleUpper.includes(kw))) {
                 score += 10;
             }
 
-            // 4. คะแนนมาสเตอร์ดนตรีแท้ / คาราโอเกะ
+            // 5. คะแนนมาสเตอร์ดนตรีแท้ / คาราโอเกะ
             if (MASTER_KEYWORDS.some(pref => titleUpper.includes(pref))) {
                 score += 8;
             }
 
-            // 5. คะแนนภาพชัด 1080p
+            // 6. คะแนนภาพชัด
             if (["1080P", "1080", "FHD", "4K", "HD"].some(hd => titleUpper.includes(hd))) {
                 score += 4;
             }
 
-            // 6. หักคะแนนไฟล์เสียงสังเคราะห์ MIDI
+            // 7. หักคะแนนไฟล์สังเคราะห์ MIDI
             if (MIDI_KEYWORDS.some(midi => titleUpper.includes(midi))) {
                 score -= 15;
             }
@@ -137,7 +147,7 @@ async function handleRequest(request) {
             });
         }
 
-        // จัดอันดับตามคะแนนความแม่นยำสูงสุด
+        // เรียงลำดับตามคะแนนความแม่นยำสูงสุด
         results.sort((a, b) => b.score - a.score);
 
         const cleanResults = results.slice(0, 20);
@@ -165,10 +175,11 @@ async function handleRequest(request) {
 
 /*
  * =====================================================
- * Title Relevance Algorithm (แปลงจาก Python)
+ * Title Relevance Algorithm (แก้ไข JavaScript Method แล้ว)
  * =====================================================
  */
 function calculateTitleRelevance(title, query) {
+    if (!title || !query) return 0;
     const q = query.trim().toLowerCase();
     const t = title.toLowerCase();
 
@@ -176,23 +187,26 @@ function calculateTitleRelevance(title, query) {
     let cleanT = t.replace(/\[.*?\]|\(.*?\)|【.*?】/g, "");
     cleanT = cleanT.replace(/คาราโอเกะ/g, "").replace(/karaoke/g, "").trim();
 
-    // แยกส่วนด้วยเครื่องหมายขีด (เช่น "ขอบฟ้า - BODYSLAM")
+    // แยกส่วนด้วยเครื่องหมายขีด (เช่น "เราและนาย - LOSO")
     const parts = cleanT.split("-").map(p => p.trim()).filter(Boolean);
 
     // 1. ชื่อเพลงตรงกับคำค้นหาแบบเป๊ะๆ 100%
     for (const p of parts) {
         if (p === q) return 50;
+        // แก้ไขเป็น .startsWith() และ .endsWith() ที่ถูกต้องใน JavaScript
         if (p.startsWith(q + " ") || p.endsWith(" " + q)) return 35;
     }
 
     // 2. คำค้นหาปรากฏเป็นคำเดี่ยวๆ มีขอบเขตชัดเจน
-    const escapedQ = escapeRegExp(q);
-    const boundaryPattern = new RegExp(`(?:^|[\\s\\-\\(\\[\\{\\"\\'|/])${escapedQ}(?:$|[\\s\\-\\)\\]\\}\\"\\'|/])`, "i");
-    if (boundaryPattern.test(t)) {
-        return 30;
-    }
+    try {
+        const escapedQ = escapeRegExp(q);
+        const boundaryPattern = new RegExp(`(?:^|[\\s\\-\\(\\[\\{\\"\\'|/])${escapedQ}(?:$|[\\s\\-\\)\\]\\}\\"\\'|/])`, "i");
+        if (boundaryPattern.test(t)) {
+            return 30;
+        }
+    } catch (e) {}
 
-    // 3. ปรากฏเป็นแค่ส่วนหนึ่งของคำอื่น
+    // 3. ปรากฏเป็นส่วนหนึ่งของชื่อเพลง
     if (t.includes(q)) {
         return 10;
     }
@@ -206,10 +220,11 @@ function escapeRegExp(string) {
 
 /*
  * =====================================================
- * YouTube Innertube Fetcher (Zero Cold Start / No 429)
+ * YouTube Search (Innertube + Fallback สองชั้น)
  * =====================================================
  */
 async function searchYouTube(query) {
+    // 1. ลองผ่าน Innertube API ก่อน (ไว และไม่โดนบล็อก)
     try {
         const YT_KEY = 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
         const res = await fetch(`https://www.youtube.com/youtubei/v1/search?key=${YT_KEY}`, {
@@ -235,8 +250,8 @@ async function searchYouTube(query) {
             const data = await res.json();
             const results = [];
             walk(data, node => {
-                if (node && node.videoRenderer) {
-                    const v = node.videoRenderer;
+                if (node && (node.videoRenderer || node.compactVideoRenderer)) {
+                    const v = node.videoRenderer || node.compactVideoRenderer;
                     if (!v.videoId) return;
 
                     const title = getRunsText(v.title) || v.headline?.simpleText || "";
@@ -252,7 +267,47 @@ async function searchYouTube(query) {
             if (results.length > 0) return results;
         }
     } catch (e) {
-        console.warn("Innertube fallback:", e);
+        console.warn("Innertube search fallback:", e);
+    }
+
+    // 2. สำรองด้วยการดึงหน้า HTML
+    try {
+        const url = "https://www.youtube.com/results?search_query=" + encodeURIComponent(query);
+        const response = await fetch(url, {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36",
+                "Accept-Language": "th-TH,th;q=0.9,en;q=0.8"
+            }
+        });
+
+        if (response.ok) {
+            const html = await response.text();
+            const match = html.match(/var ytInitialData = ({.*?});<\/script>/) ||
+                          html.match(/ytInitialData\s*=\s*({.+?});/);
+
+            if (match) {
+                const data = JSON.parse(match[1]);
+                const results = [];
+                walk(data, node => {
+                    if (node && (node.videoRenderer || node.compactVideoRenderer)) {
+                        const v = node.videoRenderer || node.compactVideoRenderer;
+                        if (!v.videoId) return;
+
+                        const title = getRunsText(v.title);
+                        const channel = getRunsText(v.ownerText || v.shortBylineText || v.longBylineText);
+                        const duration = v.lengthText?.simpleText || getRunsText(v.lengthText) || "";
+                        const thumbnail = `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`;
+
+                        if (title) {
+                            results.push({ videoId: v.videoId, title, channel, duration, thumbnail });
+                        }
+                    }
+                });
+                if (results.length > 0) return results;
+            }
+        }
+    } catch (e) {
+        console.error("HTML search error:", e);
     }
 
     return [];
