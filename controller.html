@@ -902,18 +902,17 @@
     ========================================================= */
 
     let peer = null;
-
     let conn = null;
-
     let roomId = "";
-
     let currentQueue = [];
-
     let isPaused = false;
-
     let reconnectTimer = null;
-
     let toastTimer = null;
+
+    // ระบบรักษาการเชื่อมต่อและคิวสำรองคำสั่ง
+    let heartbeatTimer = null;
+    const pendingCommandQueue = [];
+    let wakeLock = null;
 
 
     /* =========================================================
@@ -921,261 +920,198 @@
     ========================================================= */
 
     function getRoom() {
+        const params = new URLSearchParams(window.location.search);
+        const urlRoom = params.get("room") || params.get("r");
+        const savedRoom = localStorage.getItem("last_room");
 
-        const params =
-            new URLSearchParams(
-                window.location.search
-            );
-
-        const urlRoom =
-            params.get("room") ||
-            params.get("r");
-
-        const savedRoom =
-            localStorage.getItem(
-                "last_room"
-            );
-
-        roomId =
-            (
-                urlRoom ||
-                savedRoom ||
-                ""
-            ).toLowerCase().trim();
+        roomId = (urlRoom || savedRoom || "").toLowerCase().trim();
 
         if (roomId) {
-
-            localStorage.setItem(
-                "last_room",
-                roomId
-            );
-
+            localStorage.setItem("last_room", roomId);
         }
 
-        document.getElementById(
-            "room-code"
-        ).innerText =
-            roomId || "ไม่พบ Room";
-
+        document.getElementById("room-code").innerText = roomId || "ไม่พบ Room";
     }
 
 
     /* =========================================================
-       PEERJS
+       PEERJS (ปรับปรุงระบบเชื่อมต่อ Signaling)
     ========================================================= */
 
     function initPeer() {
-
         if (!roomId) {
-
-            setConnection(
-                "ไม่พบ Room",
-                false
-            );
-
+            setConnection("ไม่พบ Room", false);
             return;
-
         }
 
-        setConnection(
-            "กำลังเชื่อมต่อ",
-            false
-        );
+        setConnection("กำลังเชื่อมต่อ", false);
 
         try {
-
-            peer =
-                new Peer();
-
+            if (peer && !peer.destroyed) {
+                peer.destroy();
+            }
+            peer = new Peer();
         } catch (error) {
-
-            console.error(
-                error
-            );
-
-            setConnection(
-                "PeerJS ผิดพลาด",
-                false
-            );
-
+            console.error(error);
+            setConnection("PeerJS ผิดพลาด", false);
             return;
-
         }
 
-        peer.on(
-            "open",
-            () => {
+        peer.on("open", () => {
+            console.log("Controller Peer ID:", peer.id);
+            connectToTV();
+        });
 
-                console.log(
-                    "Controller Peer:",
-                    peer.id
-                );
-
-                connectToTV();
-
+        // เมื่อการเชื่อมต่อกับเซิร์ฟเวอร์กลาง (Signaling) หลุด
+        peer.on("disconnected", () => {
+            console.warn("PeerJS Signaling Disconnected! กำลังเชื่อมต่อเซิร์ฟเวอร์ใหม่...");
+            if (peer && !peer.destroyed) {
+                peer.reconnect();
             }
-        );
+        });
 
-        peer.on(
-            "error",
-            error => {
-
-                console.error(
-                    "PeerJS error:",
-                    error
-                );
-
-                setConnection(
-                    "เชื่อมต่อใหม่...",
-                    false
-                );
-
-                scheduleReconnect();
-
-            }
-        );
-
+        peer.on("error", error => {
+            console.error("PeerJS error:", error);
+            setConnection("เชื่อมต่อใหม่...", false);
+            scheduleReconnect();
+        });
     }
 
 
     /* =========================================================
-       CONNECT TV
+       CONNECT TV (พร้อมระบบ Heartbeat & Flush Queue)
     ========================================================= */
 
     function connectToTV() {
-
-        if (
-            !peer ||
-            !roomId
-        ) {
+        if (!peer || !roomId || peer.destroyed) {
             return;
         }
 
         if (conn) {
-
             try {
                 conn.close();
             } catch {}
-
         }
 
-        console.log(
-            "Connecting to TV:",
-            roomId
-        );
+        console.log("Connecting to TV:", roomId);
+        setConnection("กำลังเชื่อมต่อ TV", false);
 
-        setConnection(
-            "กำลังเชื่อมต่อ TV",
-            false
-        );
+        conn = peer.connect(roomId, {
+            reliable: true
+        });
 
-        conn =
-            peer.connect(
-                roomId,
-                {
-                    reliable: true
-                }
-            );
+        conn.on("open", () => {
+            console.log("Connected to TV สำเร็จ!");
+            setConnection("เชื่อมต่อแล้ว", true);
+            showToast("🟢 เชื่อมต่อ TV แล้ว");
 
-        conn.on(
-            "open",
-            () => {
+            // เริ่มระบบรักษาสายไม่ให้หลุด
+            startHeartbeat();
 
-                console.log(
-                    "Connected to TV"
-                );
+            // ส่งคำสั่งที่ค้างอยู่ในคิวทันทีที่เชื่อมต่อติด
+            flushPendingCommands();
 
-                setConnection(
-                    "เชื่อมต่อแล้ว",
-                    true
-                );
+            // ขอรายการคิวเพลงล่าสุดจากทีวี
+            sendAction("GET_QUEUE");
+        });
 
-                showToast(
-                    "🟢 เชื่อมต่อ TV แล้ว"
-                );
+        conn.on("data", handleData);
 
-            }
-        );
+        conn.on("close", () => {
+            console.log("TV connection closed");
+            setConnection("เชื่อมต่อใหม่...", false);
+            stopHeartbeat();
+            scheduleReconnect();
+        });
 
-        conn.on(
-            "data",
-            handleData
-        );
-
-        conn.on(
-            "close",
-            () => {
-
-                console.log(
-                    "TV connection closed"
-                );
-
-                setConnection(
-                    "TV หลุดการเชื่อมต่อ",
-                    false
-                );
-
-                scheduleReconnect();
-
-            }
-        );
-
-        conn.on(
-            "error",
-            error => {
-
-                console.error(
-                    "Connection error:",
-                    error
-                );
-
-                setConnection(
-                    "เชื่อมต่อไม่สำเร็จ",
-                    false
-                );
-
-                scheduleReconnect();
-
-            }
-        );
-
+        conn.on("error", error => {
+            console.error("Connection error:", error);
+            setConnection("เชื่อมต่อใหม่...", false);
+            stopHeartbeat();
+            scheduleReconnect();
+        });
     }
 
 
     /* =========================================================
-       RECONNECT
+       HEARTBEAT & AUTO-RECONNECT (แก้ปัญหาหลุดไว)
     ========================================================= */
 
-    function scheduleReconnect() {
+    // ส่งสัญญาณสะกิดทุก 12 วินาที เพื่อไม่ให้เบราว์เซอร์ตัดสาย WebRTC
+    function startHeartbeat() {
+        stopHeartbeat();
+        heartbeatTimer = setInterval(() => {
+            if (conn && conn.open) {
+                try {
+                    conn.send({ type: "PING" });
+                } catch (e) {
+                    console.warn("Ping failed, ต่อใหม่...", e);
+                    scheduleReconnect();
+                }
+            } else if (roomId) {
+                scheduleReconnect();
+            }
 
-        if (reconnectTimer) {
-            return;
+            // ถ้า Signaling หลุด ให้สั่งต่อใหม่
+            if (peer && peer.disconnected && !peer.destroyed) {
+                peer.reconnect();
+            }
+        }, 12000);
+    }
+
+    function stopHeartbeat() {
+        if (heartbeatTimer) {
+            clearInterval(heartbeatTimer);
+            heartbeatTimer = null;
         }
+    }
 
-        reconnectTimer =
-            setTimeout(
-                () => {
+    function scheduleReconnect() {
+        if (reconnectTimer) return;
 
-                    reconnectTimer =
-                        null;
+        reconnectTimer = setTimeout(() => {
+            reconnectTimer = null;
 
-                    if (
-                        peer &&
-                        !peer.destroyed
-                    ) {
+            if (peer && peer.disconnected && !peer.destroyed) {
+                peer.reconnect();
+            }
 
-                        connectToTV();
+            if (peer && !peer.destroyed) {
+                connectToTV();
+            } else {
+                initPeer();
+            }
+        }, 1500); // รอ 1.5 วินาทีแล้วต่อใหม่ทันที
+    }
 
-                    } else {
+    // ดักจับเมื่อผู้ใช้สลับหน้าจอกลับมา หรือปลดล็อกหน้าจอมือถือ
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            console.log("ผู้ใช้กลับเข้ามาหน้าจอ กำลังตรวจสอบการเชื่อมต่อ...");
+            if (peer && peer.disconnected && !peer.destroyed) {
+                peer.reconnect();
+            }
+            if (!conn || !conn.open) {
+                connectToTV();
+            }
+            requestWakeLock();
+        }
+    });
 
-                        initPeer();
+    window.addEventListener("focus", () => {
+        if (!conn || !conn.open) {
+            connectToTV();
+        }
+    });
 
-                    }
-
-                },
-                3000
-            );
-
+    // ป้องกันจอมือถือดับระหว่างคุมเพลง (สำหรับเบราว์เซอร์ที่รองรับ)
+    async function requestWakeLock() {
+        try {
+            if ('wakeLock' in navigator && !wakeLock) {
+                wakeLock = await navigator.wakeLock.request('screen');
+                wakeLock.addEventListener('release', () => { wakeLock = null; });
+            }
+        } catch (e) {}
     }
 
 
@@ -1184,83 +1120,59 @@
     ========================================================= */
 
     function handleData(data) {
+        if (!data || !data.type) return;
 
-        if (
-            !data ||
-            !data.type
-        ) {
+        // ข้ามข้อความตรวจสอบสัญญาณชีพ
+        if (data.type === "PING" || data.type === "PONG") {
             return;
         }
 
-        console.log(
-            "TV:",
-            data
-        );
+        console.log("TV Data:", data);
 
-        if (
-            data.type ===
-            "QUEUE_UPDATE"
-        ) {
-
-            currentQueue =
-                Array.isArray(
-                    data.queue
-                )
-                    ? data.queue
-                    : [];
-
+        if (data.type === "QUEUE_UPDATE") {
+            currentQueue = Array.isArray(data.queue) ? data.queue : [];
             renderQueue();
-
         }
-
     }
 
 
     /* =========================================================
-       SEND ACTION
+       SEND ACTION (พร้อม Command Queue ป้องกันคำสั่งหาย)
     ========================================================= */
 
-    function sendAction(
-        type,
-        payload = {}
-    ) {
+    function sendAction(type, payload = {}) {
+        const message = { type, ...payload };
 
-        if (
-            !conn ||
-            !conn.open
-        ) {
-
-            showToast(
-                "🔴 ยังไม่ได้เชื่อมต่อ TV"
-            );
-
+        if (!conn || !conn.open) {
+            // หากหลุดอยู่ ให้บันทึกคำสั่งไว้ แล้วสั่งต่อสายทันที
+            pendingCommandQueue.push(message);
+            showToast("🔄 กำลังเชื่อมต่อเพื่อส่งคำสั่ง...");
+            scheduleReconnect();
             return false;
-
         }
 
         try {
-
-            conn.send({
-                type,
-                ...payload
-            });
-
+            conn.send(message);
             return true;
-
         } catch (error) {
-
-            console.error(
-                error
-            );
-
-            showToast(
-                "ส่งคำสั่งไม่สำเร็จ"
-            );
-
+            console.error("sendAction error:", error);
+            pendingCommandQueue.push(message);
+            scheduleReconnect();
             return false;
-
         }
+    }
 
+    function flushPendingCommands() {
+        while (pendingCommandQueue.length > 0 && conn && conn.open) {
+            const cmd = pendingCommandQueue.shift();
+            try {
+                conn.send(cmd);
+                console.log("ส่งคำสั่งที่ค้างสำเร็จ:", cmd);
+            } catch (err) {
+                console.error("ระบายคำสั่งล้มเหลว:", err);
+                break;
+            }
+        }
     }
 
 
@@ -1269,44 +1181,14 @@
     ========================================================= */
 
     function togglePlay() {
-
-        isPaused =
-            !isPaused;
-
-        const success =
-            sendAction(
-                "TOGGLE_PLAY",
-                {
-                    isPaused
-                }
-            );
-
-        if (!success) {
-
-            isPaused =
-                !isPaused;
-
-            return;
-
-        }
-
+        isPaused = !isPaused;
+        sendAction("TOGGLE_PLAY", { isPaused });
         updatePauseButton();
-
     }
 
-
     function updatePauseButton() {
-
-        const button =
-            document.getElementById(
-                "pause-btn"
-            );
-
-        button.innerText =
-            isPaused
-                ? "▶️ เล่นต่อ"
-                : "⏸️ หยุดชั่วคราว";
-
+        const button = document.getElementById("pause-btn");
+        button.innerText = isPaused ? "▶️ เล่นต่อ" : "⏸️ หยุดชั่วคราว";
     }
 
 
@@ -1315,194 +1197,88 @@
     ========================================================= */
 
     async function searchMusic() {
-
-        const input =
-            document.getElementById(
-                "search-input"
-            );
-
-        const q =
-            input.value.trim();
+        const input = document.getElementById("search-input");
+        const q = input.value.trim();
 
         if (!q) {
-
             input.focus();
-
             return;
-
         }
 
-        const results =
-            document.getElementById(
-                "results"
-            );
-
-        const count =
-            document.getElementById(
-                "result-count"
-            );
+        const results = document.getElementById("results");
+        const count = document.getElementById("result-count");
 
         results.innerHTML = `
             <div class="loading">
                 🔎 กำลังค้นหาเพลง...
             </div>
         `;
-
         count.innerText = "";
 
         try {
+            const response = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-            const response =
-                await fetch(
-                    `/api/search?q=${encodeURIComponent(q)}`
-                );
+            const data = await response.json();
 
-            if (!response.ok) {
-
-                throw new Error(
-                    `HTTP ${response.status}`
-                );
-
+            if (!data || data.success !== true || !Array.isArray(data.results)) {
+                throw new Error(data?.error || "รูปแบบข้อมูลไม่ถูกต้อง");
             }
 
-            const data =
-                await response.json();
+            const songs = data.results;
+            count.innerText = `${songs.length} รายการ`;
 
-            /*
-             * API ของเรา:
-             *
-             * {
-             *   success: true,
-             *   results: [...]
-             * }
-             */
-
-            if (
-                !data ||
-                data.success !== true ||
-                !Array.isArray(
-                    data.results
-                )
-            ) {
-
-                throw new Error(
-                    data?.error ||
-                    "รูปแบบข้อมูลไม่ถูกต้อง"
-                );
-
-            }
-
-            const songs =
-                data.results;
-
-            count.innerText =
-                `${songs.length} รายการ`;
-
-            if (
-                songs.length === 0
-            ) {
-
+            if (songs.length === 0) {
                 results.innerHTML = `
                     <div class="loading">
                         😢 ไม่พบเพลง
                     </div>
                 `;
-
                 return;
-
             }
 
-            results.innerHTML =
-                songs.map(
-                    song =>
-                        createResultHtml(
-                            song
-                        )
-                ).join("");
+            results.innerHTML = songs.map(song => createResultHtml(song)).join("");
 
         } catch (error) {
-
-            console.error(
-                "Search error:",
-                error
-            );
-
+            console.error("Search error:", error);
             results.innerHTML = `
                 <div class="error">
                     ❌ ค้นหาไม่สำเร็จ
                     <br>
-                    <small>
-                        ${escapeHtml(
-                            error.message
-                        )}
-                    </small>
+                    <small>${escapeHtml(error.message)}</small>
                 </div>
             `;
-
         }
-
     }
 
 
     /* =========================================================
-       SEARCH RESULT
+       SEARCH RESULT & ADD SONG
     ========================================================= */
 
-    function createResultHtml(
-        song
-    ) {
-
-        const safeSong =
-            encodeURIComponent(
-                JSON.stringify(song)
-            );
-
-        const thumbnail =
-            song.thumbnail ||
-            `https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`;
-
-        const channel =
-            song.channel ||
-            song.author ||
-            "";
-
-        const duration =
-            song.duration
-                ? ` • ${song.duration}`
-                : "";
+    function createResultHtml(song) {
+        const safeSong = encodeURIComponent(JSON.stringify(song));
+        const thumbnail = song.thumbnail || `https://i.ytimg.com/vi/${song.videoId}/mqdefault.jpg`;
+        const channel = song.channel || song.author || "";
+        const duration = song.duration ? ` • ${song.duration}` : "";
 
         return `
             <div class="result-item">
-
                 <img
                     class="result-thumb"
-                    src="${escapeHtml(
-                        thumbnail
-                    )}"
+                    src="${escapeHtml(thumbnail)}"
                     loading="lazy"
                     onerror="this.style.visibility='hidden'"
                 >
-
                 <div class="result-info">
-
                     <div class="result-title">
-                        ${escapeHtml(
-                            song.title ||
-                            "ไม่ทราบชื่อ"
-                        )}
+                        ${escapeHtml(song.title || "ไม่ทราบชื่อ")}
                     </div>
-
                     <div class="result-meta">
-                        ${escapeHtml(
-                            channel
-                        )}
-                        ${escapeHtml(
-                            duration
-                        )}
+                        ${escapeHtml(channel)}
+                        ${escapeHtml(duration)}
                     </div>
-
                 </div>
-
                 <button
                     class="btn-add"
                     data-song="${safeSong}"
@@ -1510,483 +1286,163 @@
                 >
                     ＋ จอง
                 </button>
-
             </div>
         `;
-
     }
 
-
-    /* =========================================================
-       ADD SONG
-    ========================================================= */
-
-    function addSongFromButton(
-        button
-    ) {
-
+    function addSongFromButton(button) {
         try {
-
-            const encoded =
-                button.dataset.song;
-
-            const song =
-                JSON.parse(
-                    decodeURIComponent(
-                        encoded
-                    )
-                );
-
+            const encoded = button.dataset.song;
+            const song = JSON.parse(decodeURIComponent(encoded));
             addSong(song);
-
         } catch (error) {
-
-            console.error(
-                error
-            );
-
-            showToast(
-                "เพิ่มเพลงไม่สำเร็จ"
-            );
-
+            console.error(error);
+            showToast("เพิ่มเพลงไม่สำเร็จ");
         }
-
     }
-
 
     function addSong(song) {
-
-        if (
-            !song ||
-            !song.videoId
-        ) {
-
-            showToast(
-                "เพลงนี้ไม่มี Video ID"
-            );
-
+        if (!song || !song.videoId) {
+            showToast("เพลงนี้ไม่มี Video ID");
             return;
-
         }
 
-        /*
-         * ตรวจเพลงซ้ำ
-         */
-
-        if (
-            currentQueue.some(
-                item =>
-                    item.videoId ===
-                    song.videoId
-            )
-        ) {
-
-            showToast(
-                "🎵 เพลงนี้อยู่ในคิวแล้ว"
-            );
-
+        if (currentQueue.some(item => item.videoId === song.videoId)) {
+            showToast("🎵 เพลงนี้อยู่ในคิวแล้ว");
             return;
-
         }
 
-        const success =
-            sendAction(
-                "ADD_SONG",
-                {
-                    song
-                }
-            );
-
-        if (success) {
-
-            showToast(
-                "🎵 เพิ่มเพลงเข้าคิวแล้ว"
-            );
-
-            /*
-             * ไม่เพิ่มเข้า currentQueue
-             * เอง เพราะให้ TV เป็น
-             * Source of Truth
-             */
-
-        }
-
+        sendAction("ADD_SONG", { song });
+        showToast("🎵 เพิ่มเพลงเข้าคิวแล้ว");
     }
 
 
     /* =========================================================
-       QUEUE RENDER
+       QUEUE RENDER & ACTIONS
     ========================================================= */
 
     function renderQueue() {
+        const list = document.getElementById("queue-list");
+        const count = document.getElementById("queue-count");
 
-        const list =
-            document.getElementById(
-                "queue-list"
-            );
+        count.innerText = `${currentQueue.length} เพลง`;
 
-        const count =
-            document.getElementById(
-                "queue-count"
-            );
-
-        count.innerText =
-            `${currentQueue.length} เพลง`;
-
-        if (
-            currentQueue.length === 0
-        ) {
-
+        if (currentQueue.length === 0) {
             list.innerHTML = `
                 <div class="queue-empty">
                     🎵 ยังไม่มีเพลงในคิว
                 </div>
             `;
-
             return;
-
         }
 
-        list.innerHTML =
-            currentQueue.map(
-                (song, index) => {
+        list.innerHTML = currentQueue.map((song, index) => {
+            const isPlaying = index === 0;
 
-                    const isPlaying =
-                        index === 0;
-
-                    return `
-                        <div
-                            class="queue-item ${
-                                isPlaying
-                                    ? "playing"
-                                    : ""
-                            }"
-                        >
-
-                            <div class="queue-number">
-                                ${
-                                    isPlaying
-                                        ? "▶"
-                                        : index + 1
-                                }
-                            </div>
-
-                            <div class="queue-info">
-
-                                ${
-                                    isPlaying
-                                        ? `
-                                            <div class="queue-status">
-                                                กำลังเล่น
-                                            </div>
-                                          `
-                                        : ""
-                                }
-
-                                <div class="queue-title">
-                                    ${escapeHtml(
-                                        song.title ||
-                                        "ไม่ทราบชื่อ"
-                                    )}
-                                </div>
-
-                                <div class="queue-channel">
-                                    ${escapeHtml(
-                                        song.channel ||
-                                        song.author ||
-                                        ""
-                                    )}
-                                </div>
-
-                            </div>
-
-                            <div class="queue-actions">
-
-                                ${
-                                    isPlaying
-                                        ? `
-                                            <button
-                                                class="queue-btn retry"
-                                                onclick="retryPlay()"
-                                            >
-                                                เริ่มใหม่
-                                            </button>
-                                          `
-                                        : ""
-                                }
-
-                                ${
-                                    index > 0
-                                        ? `
-                                            <button
-                                                class="queue-btn orange"
-                                                onclick="moveSong(
-                                                    ${index},
-                                                    'up'
-                                                )"
-                                            >
-                                                ▲
-                                            </button>
-                                          `
-                                        : ""
-                                }
-
-                                ${
-                                    index > 0 &&
-                                    index <
-                                        currentQueue.length - 1
-                                        ? `
-                                            <button
-                                                class="queue-btn orange"
-                                                onclick="moveSong(
-                                                    ${index},
-                                                    'down'
-                                                )"
-                                            >
-                                                ▼
-                                            </button>
-                                          `
-                                        : ""
-                                }
-
-                                ${
-                                    !isPlaying
-                                        ? `
-                                            <button
-                                                class="queue-btn red"
-                                                onclick="deleteSong(
-                                                    ${index}
-                                                )"
-                                            >
-                                                🗑
-                                            </button>
-                                          `
-                                        : ""
-                                }
-
-                            </div>
-
+            return `
+                <div class="queue-item ${isPlaying ? "playing" : ""}">
+                    <div class="queue-number">
+                        ${isPlaying ? "▶" : index + 1}
+                    </div>
+                    <div class="queue-info">
+                        ${isPlaying ? `<div class="queue-status">กำลังเล่น</div>` : ""}
+                        <div class="queue-title">
+                            ${escapeHtml(song.title || "ไม่ทราบชื่อ")}
                         </div>
-                    `;
-
-                }
-            )
-            .join("");
-
+                        <div class="queue-channel">
+                            ${escapeHtml(song.channel || song.author || "")}
+                        </div>
+                    </div>
+                    <div class="queue-actions">
+                        ${isPlaying ? `
+                            <button class="queue-btn retry" onclick="retryPlay()">
+                                เริ่มใหม่
+                            </button>
+                        ` : ""}
+                        ${index > 0 ? `
+                            <button class="queue-btn orange" onclick="moveSong(${index}, 'up')">
+                                ▲
+                            </button>
+                        ` : ""}
+                        ${index > 0 && index < currentQueue.length - 1 ? `
+                            <button class="queue-btn orange" onclick="moveSong(${index}, 'down')">
+                                ▼
+                            </button>
+                        ` : ""}
+                        ${!isPlaying ? `
+                            <button class="queue-btn red" onclick="deleteSong(${index})">
+                                🗑
+                            </button>
+                        ` : ""}
+                    </div>
+                </div>
+            `;
+        }).join("");
     }
-
-
-    /* =========================================================
-       QUEUE ACTIONS
-    ========================================================= */
 
     function deleteSong(index) {
+        if (index < 0 || index >= currentQueue.length) return;
+        const song = currentQueue[index];
+        const title = song?.title || "เพลงนี้";
 
-        if (
-            index < 0 ||
-            index >= currentQueue.length
-        ) {
+        if (!confirm(`ลบ "${title}" ออกจากคิว?`)) return;
 
-            return;
-
-        }
-
-        const song =
-            currentQueue[index];
-
-        const title =
-            song?.title ||
-            "เพลงนี้";
-
-        if (
-            !confirm(
-                `ลบ "${title}" ออกจากคิว?`
-            )
-        ) {
-
-            return;
-
-        }
-
-        sendAction(
-            "DELETE_SONG",
-            {
-                index
-            }
-        );
-
+        sendAction("DELETE_SONG", { index });
     }
 
-
-    function moveSong(
-        index,
-        direction
-    ) {
-
-        sendAction(
-            "MOVE_SONG",
-            {
-                index,
-                direction
-            }
-        );
-
+    function moveSong(index, direction) {
+        sendAction("MOVE_SONG", { index, direction });
     }
-
 
     function retryPlay() {
-
-        sendAction(
-            "RETRY_PLAY"
-        );
-
-        showToast(
-            "🔄 เริ่มเพลงใหม่"
-        );
-
+        sendAction("RETRY_PLAY");
+        showToast("🔄 เริ่มเพลงใหม่");
     }
 
 
     /* =========================================================
-       CONNECTION UI
+       CONNECTION UI & TOAST
     ========================================================= */
 
-    function setConnection(
-        text,
-        online
-    ) {
+    function setConnection(text, online) {
+        const box = document.getElementById("connection");
+        const label = document.getElementById("connection-text");
 
-        const box =
-            document.getElementById(
-                "connection"
-            );
-
-        const label =
-            document.getElementById(
-                "connection-text"
-            );
-
-        label.innerText =
-            text;
+        label.innerText = text;
 
         if (online) {
-
-            box.classList.add(
-                "online"
-            );
-
+            box.classList.add("online");
         } else {
-
-            box.classList.remove(
-                "online"
-            );
-
+            box.classList.remove("online");
         }
-
     }
 
+    function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.innerText = message;
+        toast.classList.add("show");
 
-    /* =========================================================
-       TOAST
-    ========================================================= */
+        if (toastTimer) clearTimeout(toastTimer);
 
-    function showToast(
-        message
-    ) {
+        toastTimer = setTimeout(() => {
+            toast.classList.remove("show");
+        }, 2200);
+    }
 
-        const toast =
-            document.getElementById(
-                "toast"
-            );
+    function escapeHtml(value) {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
 
-        toast.innerText =
-            message;
-
-        toast.classList.add(
-            "show"
-        );
-
-        if (toastTimer) {
-
-            clearTimeout(
-                toastTimer
-            );
-
+    document.getElementById("search-input").addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+            searchMusic();
         }
-
-        toastTimer =
-            setTimeout(
-                () => {
-
-                    toast.classList.remove(
-                        "show"
-                    );
-
-                },
-                2200
-            );
-
-    }
-
-
-    /* =========================================================
-       HTML ESCAPE
-    ========================================================= */
-
-    function escapeHtml(
-        value
-    ) {
-
-        return String(
-            value ?? ""
-        )
-            .replace(
-                /&/g,
-                "&amp;"
-            )
-            .replace(
-                /</g,
-                "&lt;"
-            )
-            .replace(
-                />/g,
-                "&gt;"
-            )
-            .replace(
-                /"/g,
-                "&quot;"
-            )
-            .replace(
-                /'/g,
-                "&#039;"
-            );
-
-    }
-
-
-    /* =========================================================
-       ENTER SEARCH
-    ========================================================= */
-
-    document
-        .getElementById(
-            "search-input"
-        )
-        .addEventListener(
-            "keydown",
-            event => {
-
-                if (
-                    event.key ===
-                    "Enter"
-                ) {
-
-                    searchMusic();
-
-                }
-
-            }
-        );
+    });
 
 
     /* =========================================================
@@ -1994,10 +1450,9 @@
     ========================================================= */
 
     getRoom();
-
     initPeer();
-
     renderQueue();
+    requestWakeLock();
 
 </script>
 
