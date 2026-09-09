@@ -36,7 +36,7 @@
         }
 
         /* =========================================================
-           BACKGROUND / SCREEN SERVER
+           BACKGROUND
         ========================================================= */
 
         #background {
@@ -551,7 +551,7 @@
         }
 
         /* =========================================================
-           EMPTY / SCREEN SERVER
+           EMPTY
         ========================================================= */
 
         #empty-state {
@@ -1170,7 +1170,6 @@
                     disablekb: 1,
                     fs: 0,
                     modestbranding: 1,
-                    rel: 0,
                     iv_load_policy: 3,
                     cc_load_policy: 0,
                     playsinline: 1,
@@ -1249,15 +1248,11 @@
             }
         }
 
-        // ✨ ดักจับ Error 101/150 (วิดีโอติดบล็อก Embed ลิขสิทธิ์) แบบนุ่มนวล
+        // ดักจับ Error 101/150 เพื่อข้ามเพลงอย่างนุ่มนวล ไม่ปล่อยให้จอดำค้าง
         function onPlayerError(event) {
-            console.warn("YouTube Player Error Code:", event.data);
+            console.warn("YouTube Player Error:", event.data);
 
-            // 101, 150 = embedding disabled by owner (Sing King / ค่ายเพลงล็อก)
-            // 100 = video not found / deleted
-            // 2, 5 = invalid parameters / HTML5 error
             if ([2, 5, 100, 101, 150].includes(event.data)) {
-                console.log("วิดีโอนี้ติดบล็อกลิขสิทธิ์ สั่งข้ามอัตโนมัติ...");
                 setTimeout(() => {
                     if (queue.length > 0 && !isTransitioning) {
                         skipSong();
