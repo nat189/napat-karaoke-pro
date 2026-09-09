@@ -131,6 +131,7 @@
             box-shadow: 0 0 12px rgba(50, 215, 75, 0.7);
         }
 
+        /* เครื่องเล่นคู่ Dual Player */
         #player-wrapper {
             position: absolute;
             inset: 0;
@@ -149,6 +150,16 @@
         #player iframe {
             width: 100% !important;
             height: 100% !important;
+        }
+
+        #stream-player {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+            display: none;
         }
 
         #now-playing {
@@ -220,10 +231,7 @@
             margin-bottom: 12px;
         }
 
-        .queue-title {
-            font-size: 15px;
-            font-weight: 800;
-        }
+        .queue-title { font-size: 15px; font-weight: 800; }
 
         .queue-count {
             min-width: 27px;
@@ -269,10 +277,7 @@
             background: #222;
         }
 
-        .queue-info {
-            min-width: 0;
-            flex: 1;
-        }
+        .queue-info { min-width: 0; flex: 1; }
 
         .queue-name {
             font-size: 12px;
@@ -355,7 +360,6 @@
             line-height: 1.4;
         }
 
-        /* Toast แจ้งเตือนสลับเพลง */
         #tv-toast {
             position: fixed;
             top: 30px;
@@ -501,8 +505,12 @@
     </div>
 
     <div id="app">
+        <!-- Dual Player Container -->
         <div id="player-wrapper">
+            <!-- 1. YouTube IFrame Player -->
             <div id="player"></div>
+            <!-- 2. Direct HTML5 Stream Player (สำหรับ Sing King / yt-dlp) -->
+            <video id="stream-player" playsinline preload="auto"></video>
         </div>
 
         <div id="top-bar">
@@ -575,13 +583,23 @@
     </script>
 
     <script>
+        /* =========================================================
+           ตั้งค่า Backend สำหรับดึงสตรีม yt-dlp
+        ========================================================= */
+        // สามารถเปลี่ยน URL นี้เป็น Home Server หรือเซิร์ฟเวอร์ที่คุณใช้รัน yt-dlp ได้ครับ
+        const STREAM_API_URL = "https://render.oke.dpdns.org/api/stream";
+
         let peer = null;
         let connObj = null;
         let currentRoom = "";
         let queue = [];
         let player = null;
+        let streamPlayer = null;
         let isAppReady = false;
         let isTransitioning = false;
+
+        // โหมดเครื่องเล่นปัจจุบัน: 'youtube' หรือ 'stream'
+        let currentMode = "youtube"; 
 
         let nextSongTimer = null;
         let uiTimer = null;
@@ -593,10 +611,8 @@
         let scoreWatcher = null;
         let toastTimer = null;
 
-        // ✨ ระบบจับเวลาเช็กว่าเล่นจริงหรือไม่ (แก้ปัญหาจอค้าง 100%)
         let hasStartedPlaying = false;
         let playWatchdog = null;
-        let fallbackCount = 0;
 
         const backgrounds = [
             "https://picsum.photos/1920/1080?random=101",
@@ -814,33 +830,9 @@
             syncQueue();
         }
 
-        function skipSong() {
-            clearTimeout(playWatchdog);
-            if (queue.length === 0) {
-                showIdleScreen();
-                return;
-            }
-
-            clearTimeout(nextSongTimer);
-            clearTimeout(nowPlayingTimer);
-            hideScore();
-            stopScoreWatcher();
-
-            isTransitioning = true;
-            fallbackCount = 0;
-            hasStartedPlaying = false;
-
-            queue.shift();
-            syncQueue();
-
-            if (queue.length > 0) {
-                playCurrent();
-            } else {
-                showIdleScreen();
-            }
-
-            setTimeout(() => { isTransitioning = false; }, 1200);
-        }
+        /* =========================================================
+           DUAL PLAYER LOGIC (สลับระหว่าง YouTube IFrame กับ Video Stream)
+        ========================================================= */
 
         function playCurrent() {
             clearTimeout(playWatchdog);
@@ -869,119 +861,161 @@
 
             hasStartedPlaying = false;
 
-            if (player && typeof player.loadVideoById === "function") {
-                player.loadVideoById(current.videoId);
+            // ตรวจสอบว่าเป็นเพลงจากช่อง Sing King หรือไม่
+            const isSingKing = (current.channel || "").toLowerCase().includes("sing king") ||
+                               (current.title || "").toLowerCase().includes("sing king");
 
-                // ✨ นับถอยหลัง 5 วินาที: หากวิดีโอไม่เริ่มเล่น (ติดจอดำ Sing King) ให้สั่งแก้ทันที
-                playWatchdog = setTimeout(() => {
-                    if (!hasStartedPlaying) {
-                        console.warn("Watchdog ทำงาน: วิดีโอติดลิขสิทธิ์ ไม่สามารถเริ่มเล่นได้");
-                        handleUnplayableVideo();
-                    }
-                }, 5000);
+            if (isSingKing) {
+                // บังคับเล่นผ่าน Stream ตรงจาก yt-dlp ทันที
+                playWithDirectStream(current.videoId);
+            } else {
+                // เพลงทั่วไปเล่นผ่าน YouTube IFrame ปกติ
+                playWithYouTubeIframe(current.videoId);
             }
 
             updateQueueUI();
         }
 
-        // =========================================================
-        // สลับคลิปอัตโนมัติเมื่อเจอเพลงติดลิขสิทธิ์ Embed
-        // =========================================================
-        async function handleUnplayableVideo() {
-            clearTimeout(playWatchdog);
-            if (isTransitioning || queue.length === 0) return;
+        function playWithYouTubeIframe(videoId) {
+            currentMode = "youtube";
 
-            const current = queue[0];
-            fallbackCount++;
+            // สลับการแสดงผล
+            if (streamPlayer) {
+                streamPlayer.pause();
+                streamPlayer.style.display = "none";
+                streamPlayer.src = "";
+            }
+            document.getElementById("player").style.display = "block";
 
-            if (fallbackCount <= 2) {
-                showTvToast("⚠️ เพลงนี้ติดลิขสิทธิ์ กำลังสลับหาช่องอื่น...");
+            if (player && typeof player.loadVideoById === "function") {
+                player.loadVideoById(videoId);
 
-                try {
-                    // ล้างคำว่า sing king ออก แล้วค้นหาคาราโอเกะช่องอื่น
-                    let cleanQuery = (current.title || "")
-                        .replace(/sing\s*king/gi, "")
-                        .replace(/official\s*karaoke/gi, "")
-                        .replace(/karaoke\s*version/gi, "")
-                        .replace(/[\(\)\[\]\-]/gi, " ")
-                        .trim();
-
-                    const response = await fetch(`/api/search?q=${encodeURIComponent(cleanQuery + " karaoke")}`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data && data.success && Array.isArray(data.results)) {
-                            // ตัดช่อง Sing King ออกทั้งหมด 100%
-                            const alt = data.results.find(item => {
-                                const ch = (item.channel || item.author || "").toLowerCase();
-                                const ti = (item.title || "").toLowerCase();
-                                const isSingKing = ch.includes("sing king") || ti.includes("sing king");
-                                return item.videoId && item.videoId !== current.videoId && !isSingKing;
-                            });
-
-                            if (alt) {
-                                showTvToast(`🔄 เล่นแทนด้วย: ${alt.channel || 'เวอร์ชันอื่น'}`);
-                                current.videoId = alt.videoId;
-                                current.title = alt.title;
-                                current.channel = alt.channel || alt.author || "เวอร์ชันสำรอง";
-                                current.thumbnail = alt.thumbnail;
-
-                                updateQueueUI();
-                                syncQueue();
-
-                                hasStartedPlaying = false;
-                                player.loadVideoById(alt.videoId);
-
-                                playWatchdog = setTimeout(() => {
-                                    if (!hasStartedPlaying) handleUnplayableVideo();
-                                }, 5000);
-                                return;
-                            }
-                        }
+                // หากภายใน 5 วินาที IFrame ไม่เริ่มเล่น ให้ดึงสตรีมสำรองทันที
+                playWatchdog = setTimeout(() => {
+                    if (!hasStartedPlaying) {
+                        console.warn("IFrame เล่นไม่ได้ สลับไปดึง Stream ตรง...");
+                        showTvToast("⚠️ สลับไปเล่นสตรีมตรงผ่าน yt-dlp...");
+                        playWithDirectStream(videoId);
                     }
-                } catch (e) {
-                    console.error("Fallback error:", e);
+                }, 5000);
+            }
+        }
+
+        async function playWithDirectStream(videoId) {
+            currentMode = "stream";
+
+            // หยุดและซ่อน YouTube IFrame
+            if (player && typeof player.stopVideo === "function") {
+                try { player.stopVideo(); } catch (e) {}
+            }
+            document.getElementById("player").style.display = "none";
+
+            // แสดง HTML5 Video Player
+            streamPlayer.style.display = "block";
+            showTvToast("🚀 กำลังโหลดสตรีมความเร็วสูง...");
+
+            try {
+                const response = await fetch(`${STREAM_API_URL}?id=${videoId}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                if (data && data.success && data.url) {
+                    streamPlayer.src = data.url;
+                    streamPlayer.play();
+                    hasStartedPlaying = true;
+                    scheduleHideUI();
+                    startScoreWatcher();
+                    showTvToast("▶ กำลังเล่นสตรีมตรง");
+                } else {
+                    throw new Error(data.error || "ไม่พบ URL สตรีม");
                 }
+            } catch (err) {
+                console.error("Stream fetch error:", err);
+                showTvToast("❌ ดึงสตรีมล้มเหลว กำลังข้าม...");
+                setTimeout(skipSong, 2000);
+            }
+        }
+
+        function skipSong() {
+            clearTimeout(playWatchdog);
+            if (queue.length === 0) {
+                showIdleScreen();
+                return;
             }
 
-            // ถ้าหาคลิปสำรองไม่ได้เลย ให้ข้ามทันที
-            showTvToast("❌ ข้ามไปเพลงถัดไปเนื่องจากติดลิขสิทธิ์");
-            fallbackCount = 0;
-            setTimeout(() => {
-                if (!isTransitioning) skipSong();
-            }, 1500);
+            clearTimeout(nextSongTimer);
+            clearTimeout(nowPlayingTimer);
+            hideScore();
+            stopScoreWatcher();
+
+            isTransitioning = true;
+            hasStartedPlaying = false;
+
+            // หยุดเครื่องเล่นทั้งสองแบบ
+            if (streamPlayer) {
+                streamPlayer.pause();
+                streamPlayer.src = "";
+            }
+            if (player && typeof player.stopVideo === "function") {
+                try { player.stopVideo(); } catch (e) {}
+            }
+
+            queue.shift();
+            syncQueue();
+
+            if (queue.length > 0) {
+                playCurrent();
+            } else {
+                showIdleScreen();
+            }
+
+            setTimeout(() => { isTransitioning = false; }, 1200);
         }
 
         function togglePlayFromController(shouldPause) {
-            if (!player || typeof player.getPlayerState !== "function") return;
-            try {
+            if (currentMode === "stream") {
+                if (!streamPlayer) return;
                 if (shouldPause) {
-                    player.pauseVideo();
+                    streamPlayer.pause();
                     showUI();
                 } else {
-                    player.playVideo();
+                    streamPlayer.play();
                     scheduleHideUI();
                 }
-            } catch (error) {}
+            } else {
+                if (!player || typeof player.getPlayerState !== "function") return;
+                try {
+                    if (shouldPause) {
+                        player.pauseVideo();
+                        showUI();
+                    } else {
+                        player.playVideo();
+                        scheduleHideUI();
+                    }
+                } catch (error) {}
+            }
         }
 
         function retryPlay() {
-            if (!player || queue.length === 0) return;
+            if (queue.length === 0) return;
             clearTimeout(playWatchdog);
             clearTimeout(nextSongTimer);
             isTransitioning = false;
-            fallbackCount = 0;
-            hasStartedPlaying = false;
             hideScore();
 
-            try {
-                player.seekTo(0, true);
-                player.playVideo();
+            if (currentMode === "stream") {
+                if (!streamPlayer) return;
+                streamPlayer.currentTime = 0;
+                streamPlayer.play();
                 scheduleHideUI();
-
-                playWatchdog = setTimeout(() => {
-                    if (!hasStartedPlaying) handleUnplayableVideo();
-                }, 5000);
-            } catch (error) {}
+            } else {
+                if (!player) return;
+                try {
+                    player.seekTo(0, true);
+                    player.playVideo();
+                    scheduleHideUI();
+                } catch (error) {}
+            }
         }
 
         function finishCurrentSong() {
@@ -989,10 +1023,14 @@
             if (isTransitioning || queue.length === 0) return;
 
             isTransitioning = true;
-            fallbackCount = 0;
             hasStartedPlaying = false;
             stopScoreWatcher();
             clearTimeout(nextSongTimer);
+
+            if (streamPlayer) {
+                streamPlayer.pause();
+                streamPlayer.src = "";
+            }
 
             queue.shift();
             syncQueue();
@@ -1015,6 +1053,12 @@
             stopScoreWatcher();
             hideScore();
 
+            if (streamPlayer) {
+                streamPlayer.pause();
+                streamPlayer.src = "";
+                streamPlayer.style.display = "none";
+            }
+
             if (player && typeof player.stopVideo === "function") {
                 try { player.stopVideo(); } catch (error) {}
             }
@@ -1029,6 +1073,10 @@
             showUI();
             updateQueueUI();
         }
+
+        /* =========================================================
+           SETUP PLAYERS
+        ========================================================= */
 
         function onYouTubeIframeAPIReady() {
             player = new YT.Player("player", {
@@ -1056,23 +1104,17 @@
         }
 
         function onPlayerReady() {
-            if (isAppReady) {
-                if (queue.length > 0) {
-                    playCurrent();
-                } else {
-                    showIdleScreen();
-                }
+            if (isAppReady && queue.length > 0) {
+                playCurrent();
             }
         }
 
         function onPlayerStateChange(event) {
-            if (!window.YT || !YT.PlayerState) return;
+            if (!window.YT || !YT.PlayerState || currentMode !== "youtube") return;
 
-            // เมื่อเพลงเริ่มส่งเสียงเล่นจริง ๆ
             if (event.data === YT.PlayerState.PLAYING) {
                 hasStartedPlaying = true;
                 clearTimeout(playWatchdog);
-                fallbackCount = 0;
                 scheduleHideUI();
                 startScoreWatcher();
                 return;
@@ -1092,21 +1134,60 @@
         }
 
         function onPlayerError(event) {
+            if (currentMode !== "youtube") return;
             clearTimeout(playWatchdog);
-            handleUnplayableVideo();
+            console.warn("YouTube Player Error:", event.data);
+            showTvToast("⚠️ ติดลิขสิทธิ์ กำลังสลับไปดึง Stream ตรง...");
+            if (queue.length > 0) {
+                playWithDirectStream(queue[0].videoId);
+            }
         }
+
+        function setupStreamPlayer() {
+            streamPlayer = document.getElementById("stream-player");
+
+            streamPlayer.onplaying = () => {
+                hasStartedPlaying = true;
+                clearTimeout(playWatchdog);
+                scheduleHideUI();
+                startScoreWatcher();
+            };
+
+            streamPlayer.onended = () => {
+                stopScoreWatcher();
+                finishCurrentSong();
+            };
+
+            streamPlayer.onerror = (e) => {
+                console.error("HTML5 Video Error:", e);
+                showTvToast("❌ สตรีมเล่นไม่ได้ กำลังข้าม...");
+                setTimeout(skipSong, 2000);
+            };
+        }
+
+        /* =========================================================
+           SCORE WATCHER
+        ========================================================= */
 
         function startScoreWatcher() {
             stopScoreWatcher();
             scoreWatcher = setInterval(() => {
-                if (!player || typeof player.getCurrentTime !== "function" || typeof player.getDuration !== "function") return;
-                try {
-                    const current = player.getCurrentTime();
-                    const duration = player.getDuration();
-                    if (duration > 0 && duration - current <= 5 && duration - current > 0) {
-                        showScore();
-                    }
-                } catch (error) {}
+                let current = 0;
+                let duration = 0;
+
+                if (currentMode === "stream" && streamPlayer) {
+                    current = streamPlayer.currentTime;
+                    duration = streamPlayer.duration;
+                } else if (player && typeof player.getCurrentTime === "function") {
+                    try {
+                        current = player.getCurrentTime();
+                        duration = player.getDuration();
+                    } catch (e) {}
+                }
+
+                if (duration > 0 && duration - current <= 5 && duration - current > 0) {
+                    showScore();
+                }
             }, 1000);
         }
 
@@ -1135,6 +1216,10 @@
             overlay.classList.remove("show");
             clearTimeout(scoreTimer);
         }
+
+        /* =========================================================
+           UI TIMERS & HELPERS
+        ========================================================= */
 
         function scheduleHideUI() {
             clearTimeout(uiTimer);
@@ -1201,14 +1286,13 @@
 
             initRoom();
             initPeer();
+            setupStreamPlayer();
             startBgRotation();
 
-            if (player) {
-                if (queue.length > 0) {
-                    playCurrent();
-                } else {
-                    showIdleScreen();
-                }
+            if (player && queue.length > 0) {
+                playCurrent();
+            } else {
+                showIdleScreen();
             }
         }
 
