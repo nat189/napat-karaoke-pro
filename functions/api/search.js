@@ -76,12 +76,8 @@ async function handleRequest(request) {
             "[MV]", "(MV)", " TEASER ", "REACTION"
         ];
 
-        // ช่องและคีย์เวิร์ดที่บล็อกการเล่นภายนอก (Embedding Disabled / Error 150)
-        // โดยเฉพาะ Sing King ที่ติดลิขสิทธิ์ค่ายเพลงสากลห้ามเล่นนอก YouTube 100%
-        const BLOCKED_EMBED_KEYWORDS = [
-            "SING KING",
-            "SINGKING"
-        ];
+        // ปลดล็อก Sing King ให้ค้นหาและเล่นสตรีมตรงผ่าน Render ได้ตามปกติ
+        const BLOCKED_EMBED_KEYWORDS = [];
 
         const GMM_RS_CHANNELS = [
             "GMM", "GRAMMY", "GENIE", "GENIEROCK", "WHITE MUSIC",
@@ -103,7 +99,7 @@ async function handleRequest(request) {
             const channel = entry.channel || "";
             const channelUpper = channel.toUpperCase();
 
-            // ✨ 1. ตัดคลิปจากช่อง Sing King ออกทั้งหมด 100% เพื่อไม่ให้ติดจอแจ้งเตือนลิขสิทธิ์บนทีวี
+            // ตรวจสอบคีย์เวิร์ดบล็อก
             const isBlockedEmbed = BLOCKED_EMBED_KEYWORDS.some(kw => 
                 channelUpper.includes(kw) || titleUpper.includes(kw)
             );
@@ -111,7 +107,7 @@ async function handleRequest(request) {
                 continue;
             }
 
-            // 2. กรอง MV ออก ยกเว้นคลิปนั้นจะระบุชัดว่าเป็น Karaoke
+            // 1. กรอง MV ออก ยกเว้นคลิปนั้นจะระบุชัดว่าเป็น Karaoke
             const isKaraoke = titleUpper.includes("KARAOKE") || title.includes("คาราโอเกะ");
             const isPureMV = MV_KEYWORDS.some(kw => titleUpper.includes(kw)) && !isKaraoke;
             if (isPureMV) {
@@ -120,30 +116,30 @@ async function handleRequest(request) {
 
             let score = 0;
 
-            // 3. คะแนนความตรงของชื่อเพลง (คำนวณตามสูตร)
+            // 2. คะแนนความตรงของชื่อเพลง
             score += calculateTitleRelevance(title, q);
 
-            // 4. คะแนนอันดับความนิยมดั้งเดิมจาก YouTube
+            // 3. คะแนนอันดับความนิยมดั้งเดิมจาก YouTube
             score += Math.max(0, 25 - entry.originalIndex);
 
-            // 5. คะแนนช่อง Official GMM & RS
+            // 4. คะแนนช่อง Official GMM & RS
             if (GMM_RS_CHANNELS.some(ch => channelUpper.includes(ch))) {
                 score += 15;
             } else if (["GMM", "GRAMMY", "GENIE", "RS", "อาร์สยาม"].some(kw => titleUpper.includes(kw))) {
                 score += 10;
             }
 
-            // 6. คะแนนมาสเตอร์ดนตรีแท้ / คาราโอเกะ
+            // 5. คะแนนมาสเตอร์ดนตรีแท้ / คาราโอเกะ
             if (MASTER_KEYWORDS.some(pref => titleUpper.includes(pref))) {
                 score += 8;
             }
 
-            // 7. คะแนนภาพชัด
+            // 6. คะแนนภาพชัด
             if (["1080P", "1080", "FHD", "4K", "HD"].some(hd => titleUpper.includes(hd))) {
                 score += 4;
             }
 
-            // 8. หักคะแนนไฟล์สังเคราะห์ MIDI
+            // 7. หักคะแนนไฟล์สังเคราะห์ MIDI
             if (MIDI_KEYWORDS.some(midi => titleUpper.includes(midi))) {
                 score -= 15;
             }
@@ -238,7 +234,7 @@ function escapeRegExp(string) {
  * =====================================================
  */
 async function searchYouTube(query) {
-    // 1. ลองผ่าน Innertube API ก่อน
+    // 1. ดึงผ่าน Innertube API
     try {
         const YT_KEY = 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
         const res = await fetch(`https://www.youtube.com/youtubei/v1/search?key=${YT_KEY}`, {
