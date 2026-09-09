@@ -131,7 +131,6 @@
             box-shadow: 0 0 12px rgba(50, 215, 75, 0.7);
         }
 
-        /* เครื่องเล่นคู่ Dual Player */
         #player-wrapper {
             position: absolute;
             inset: 0;
@@ -360,32 +359,6 @@
             line-height: 1.4;
         }
 
-        #tv-toast {
-            position: fixed;
-            top: 30px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-20px);
-            background: rgba(20, 20, 24, 0.95);
-            border: 1px solid rgba(255, 106, 0, 0.6);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 30px rgba(255, 106, 0, 0.35);
-            padding: 14px 28px;
-            border-radius: 999px;
-            color: #fff;
-            font-size: 16px;
-            font-weight: 800;
-            z-index: 9999;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.35s ease, transform 0.35s ease;
-            backdrop-filter: blur(15px);
-            white-space: nowrap;
-        }
-
-        #tv-toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
         #start-overlay {
             position: fixed;
             inset: 0;
@@ -507,9 +480,7 @@
     <div id="app">
         <!-- Dual Player Container -->
         <div id="player-wrapper">
-            <!-- 1. YouTube IFrame Player -->
             <div id="player"></div>
-            <!-- 2. Direct HTML5 Stream Player (สำหรับ Sing King / yt-dlp) -->
             <video id="stream-player" playsinline preload="auto"></video>
         </div>
 
@@ -557,8 +528,6 @@
         </div>
     </div>
 
-    <div id="tv-toast"></div>
-
     <div id="start-overlay">
         <div class="start-card">
             <div class="start-icon">🎤</div>
@@ -583,10 +552,6 @@
     </script>
 
     <script>
-        /* =========================================================
-           ตั้งค่า Backend สำหรับดึงสตรีม yt-dlp
-        ========================================================= */
-        // สามารถเปลี่ยน URL นี้เป็น Home Server หรือเซิร์ฟเวอร์ที่คุณใช้รัน yt-dlp ได้ครับ
         const STREAM_API_URL = "https://render.oke.dpdns.org/api/stream";
 
         let peer = null;
@@ -598,8 +563,7 @@
         let isAppReady = false;
         let isTransitioning = false;
 
-        // โหมดเครื่องเล่นปัจจุบัน: 'youtube' หรือ 'stream'
-        let currentMode = "youtube"; 
+        let currentMode = "youtube"; // 'youtube' หรือ 'stream'
 
         let nextSongTimer = null;
         let uiTimer = null;
@@ -609,7 +573,6 @@
         let bgIndex = 0;
         let activeBg = 1;
         let scoreWatcher = null;
-        let toastTimer = null;
 
         let hasStartedPlaying = false;
         let playWatchdog = null;
@@ -621,15 +584,6 @@
             "https://picsum.photos/1920/1080?random=104",
             "https://picsum.photos/1920/1080?random=105"
         ];
-
-        function showTvToast(msg, duration = 3500) {
-            const toast = document.getElementById("tv-toast");
-            if (!toast) return;
-            toast.innerText = msg;
-            toast.classList.add("show");
-            clearTimeout(toastTimer);
-            toastTimer = setTimeout(() => { toast.classList.remove("show"); }, duration);
-        }
 
         function initRoom() {
             const params = new URLSearchParams(window.location.search);
@@ -831,7 +785,7 @@
         }
 
         /* =========================================================
-           DUAL PLAYER LOGIC (สลับระหว่าง YouTube IFrame กับ Video Stream)
+           PLAYBACK & SMART AUTO-FALLBACK
         ========================================================= */
 
         function playCurrent() {
@@ -861,15 +815,12 @@
 
             hasStartedPlaying = false;
 
-            // ตรวจสอบว่าเป็นเพลงจากช่อง Sing King หรือไม่
             const isSingKing = (current.channel || "").toLowerCase().includes("sing king") ||
                                (current.title || "").toLowerCase().includes("sing king");
 
             if (isSingKing) {
-                // บังคับเล่นผ่าน Stream ตรงจาก yt-dlp ทันที
                 playWithDirectStream(current.videoId);
             } else {
-                // เพลงทั่วไปเล่นผ่าน YouTube IFrame ปกติ
                 playWithYouTubeIframe(current.videoId);
             }
 
@@ -879,7 +830,6 @@
         function playWithYouTubeIframe(videoId) {
             currentMode = "youtube";
 
-            // สลับการแสดงผล
             if (streamPlayer) {
                 streamPlayer.pause();
                 streamPlayer.style.display = "none";
@@ -890,50 +840,122 @@
             if (player && typeof player.loadVideoById === "function") {
                 player.loadVideoById(videoId);
 
-                // หากภายใน 5 วินาที IFrame ไม่เริ่มเล่น ให้ดึงสตรีมสำรองทันที
                 playWatchdog = setTimeout(() => {
                     if (!hasStartedPlaying) {
-                        console.warn("IFrame เล่นไม่ได้ สลับไปดึง Stream ตรง...");
-                        showTvToast("⚠️ สลับไปเล่นสตรีมตรงผ่าน yt-dlp...");
-                        playWithDirectStream(videoId);
+                        console.warn("YouTube IFrame โหลดไม่ขึ้น สลับไปหาเวอร์ชันอื่น...");
+                        fallbackToAlternativeVersion();
                     }
-                }, 5000);
+                }, 4500);
             }
         }
 
         async function playWithDirectStream(videoId) {
             currentMode = "stream";
 
-            // หยุดและซ่อน YouTube IFrame
             if (player && typeof player.stopVideo === "function") {
                 try { player.stopVideo(); } catch (e) {}
             }
             document.getElementById("player").style.display = "none";
-
-            // แสดง HTML5 Video Player
             streamPlayer.style.display = "block";
-            showTvToast("🚀 กำลังโหลดสตรีมความเร็วสูง...");
 
             try {
-                const response = await fetch(`${STREAM_API_URL}?id=${videoId}`);
+                // กำหนด timeout 3.5 วินาที ถ้า Render ตอบช้า ให้สลับเวอร์ชันอื่นทันที ไม่ปล่อยให้จอดำ
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+                const response = await fetch(`${STREAM_API_URL}?id=${videoId}`, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
                 const data = await response.json();
                 if (data && data.success && data.url) {
                     streamPlayer.src = data.url;
-                    streamPlayer.play();
+                    const playPromise = streamPlayer.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(err => {
+                            console.warn("Video play blocked/failed:", err);
+                            fallbackToAlternativeVersion();
+                        });
+                    }
                     hasStartedPlaying = true;
                     scheduleHideUI();
                     startScoreWatcher();
-                    showTvToast("▶ กำลังเล่นสตรีมตรง");
-                } else {
-                    throw new Error(data.error || "ไม่พบ URL สตรีม");
+                    return;
                 }
+                throw new Error("No stream URL");
             } catch (err) {
-                console.error("Stream fetch error:", err);
-                showTvToast("❌ ดึงสตรีมล้มเหลว กำลังข้าม...");
-                setTimeout(skipSong, 2000);
+                console.warn("Direct stream error, seamless fallback:", err);
+                // สลับหาเวอร์ชันอื่นทันทีแบบเงียบๆ ไม่แสดงป๊อปอัปแจ้งเตือน error
+                fallbackToAlternativeVersion();
             }
+        }
+
+        /*
+         * ระบบสลับไปเล่นเวอร์ชันอื่นอัตโนมัติ (ไม่ตัดเพลงทิ้ง และไม่โชว์ป๊อปอัป error)
+         */
+        async function fallbackToAlternativeVersion() {
+            clearTimeout(playWatchdog);
+            if (isTransitioning || queue.length === 0) return;
+
+            const current = queue[0];
+            console.log("กำลังค้นหาเวอร์ชันสำรองสำหรับ:", current.title);
+
+            // สลับกลับมาใช้ YouTube IFrame
+            currentMode = "youtube";
+            if (streamPlayer) {
+                streamPlayer.pause();
+                streamPlayer.style.display = "none";
+                streamPlayer.src = "";
+            }
+            document.getElementById("player").style.display = "block";
+
+            try {
+                let cleanQuery = (current.title || "")
+                    .replace(/sing\s*king/gi, "")
+                    .replace(/official\s*karaoke/gi, "")
+                    .replace(/karaoke\s*version/gi, "")
+                    .replace(/[\(\)\[\]\-]/gi, " ")
+                    .trim();
+
+                const res = await fetch(`/api/search?q=${encodeURIComponent(cleanQuery + " karaoke")}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.success && Array.isArray(data.results)) {
+                        // เลือกคลิปที่ไม่ใช่ Sing King และไม่ใช่คลิปเดิมที่เปิดไม่ติด
+                        const alt = data.results.find(item => {
+                            const ch = (item.channel || item.author || "").toLowerCase();
+                            const ti = (item.title || "").toLowerCase();
+                            const isSK = ch.includes("sing king") || ti.includes("sing king");
+                            return item.videoId && item.videoId !== current.videoId && !isSK;
+                        });
+
+                        if (alt) {
+                            console.log("พบเวอร์ชันสำรอง:", alt.title, alt.videoId);
+                            current.videoId = alt.videoId;
+                            current.title = alt.title;
+                            current.channel = alt.channel || alt.author || "Karaoke Version";
+                            current.thumbnail = alt.thumbnail;
+
+                            document.getElementById("now-title").innerText = current.title;
+                            document.getElementById("now-channel").innerText = current.channel;
+                            updateQueueUI();
+                            syncQueue();
+
+                            hasStartedPlaying = false;
+                            if (player && typeof player.loadVideoById === "function") {
+                                player.loadVideoById(alt.videoId);
+                            }
+                            return;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Alternative search error:", e);
+            }
+
+            // หากหาเวอร์ชันอื่นไม่ได้จริง ๆ ให้ข้ามเพลงอย่างสุภาพ โดยไม่แสดงป๊อปอัป error
+            skipSong();
         }
 
         function skipSong() {
@@ -951,7 +973,6 @@
             isTransitioning = true;
             hasStartedPlaying = false;
 
-            // หยุดเครื่องเล่นทั้งสองแบบ
             if (streamPlayer) {
                 streamPlayer.pause();
                 streamPlayer.src = "";
@@ -1137,10 +1158,7 @@
             if (currentMode !== "youtube") return;
             clearTimeout(playWatchdog);
             console.warn("YouTube Player Error:", event.data);
-            showTvToast("⚠️ ติดลิขสิทธิ์ กำลังสลับไปดึง Stream ตรง...");
-            if (queue.length > 0) {
-                playWithDirectStream(queue[0].videoId);
-            }
+            fallbackToAlternativeVersion();
         }
 
         function setupStreamPlayer() {
@@ -1159,9 +1177,8 @@
             };
 
             streamPlayer.onerror = (e) => {
-                console.error("HTML5 Video Error:", e);
-                showTvToast("❌ สตรีมเล่นไม่ได้ กำลังข้าม...");
-                setTimeout(skipSong, 2000);
+                console.warn("HTML5 Video Error, falling back:", e);
+                fallbackToAlternativeVersion();
             };
         }
 
