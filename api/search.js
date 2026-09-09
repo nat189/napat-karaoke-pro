@@ -47,7 +47,7 @@ async function handleRequest(request) {
     }
 
     try {
-        // ค้นหาทั้งคำไทยและสากลควบคู่กันเพื่อผลลัพธ์ที่ครอบคลุม
+        // ค้นหาทั้งคำไทยและสากลควบคู่กัน
         const queries = [
             `${q} คาราโอเกะ`,
             `${q} karaoke`
@@ -61,7 +61,7 @@ async function handleRequest(request) {
             .filter(res => res.status === 'fulfilled')
             .flatMap(res => res.value);
 
-        // Deduplicate ตาม videoId พร้อมเก็บบันทึกลำดับดั้งเดิม
+        // Deduplicate ตาม videoId
         const unique = new Map();
         rawResults.forEach((item, index) => {
             if (!item.videoId) return;
@@ -70,15 +70,18 @@ async function handleRequest(request) {
             }
         });
 
-        // คีย์เวิร์ดคัดกรอง MV
         const MV_KEYWORDS = [
             "OFFICIAL MV", "OFFICIAL MUSIC VIDEO", "MUSIC VIDEO",
             "[MV]", "(MV)", " TEASER ", "REACTION"
         ];
 
-        // ปลดล็อก Sing King ให้ค้นหาและเล่นสตรีมตรงผ่าน Render ได้ตามปกติ
-        const BLOCKED_EMBED_KEYWORDS = [];
+        // ตัดช่อง Sing King ออก เพื่อป้องกันคลิปติด Error 150 จอดำ
+        const BLOCKED_EMBED_KEYWORDS = [
+            "SING KING",
+            "SINGKING"
+        ];
 
+        // ช่อง Official ไทยที่รองรับและต้องการดันคะแนน
         const GMM_RS_CHANNELS = [
             "GMM", "GRAMMY", "GENIE", "GENIEROCK", "WHITE MUSIC",
             "GRAND MUSIK", "UP G", "RS", "RSFRIENDS", "RSIAM", "อาร์สยาม"
@@ -99,7 +102,7 @@ async function handleRequest(request) {
             const channel = entry.channel || "";
             const channelUpper = channel.toUpperCase();
 
-            // ตรวจสอบคีย์เวิร์ดบล็อก
+            // 1. กรองช่องที่บล็อก Embed ออก
             const isBlockedEmbed = BLOCKED_EMBED_KEYWORDS.some(kw => 
                 channelUpper.includes(kw) || titleUpper.includes(kw)
             );
@@ -107,7 +110,7 @@ async function handleRequest(request) {
                 continue;
             }
 
-            // 1. กรอง MV ออก ยกเว้นคลิปนั้นจะระบุชัดว่าเป็น Karaoke
+            // 2. กรอง MV ออก
             const isKaraoke = titleUpper.includes("KARAOKE") || title.includes("คาราโอเกะ");
             const isPureMV = MV_KEYWORDS.some(kw => titleUpper.includes(kw)) && !isKaraoke;
             if (isPureMV) {
@@ -116,30 +119,25 @@ async function handleRequest(request) {
 
             let score = 0;
 
-            // 2. คะแนนความตรงของชื่อเพลง
+            // 3. คำนวณคะแนนความตรง
             score += calculateTitleRelevance(title, q);
 
-            // 3. คะแนนอันดับความนิยมดั้งเดิมจาก YouTube
+            // 4. อันดับดั้งเดิมจาก YouTube
             score += Math.max(0, 25 - entry.originalIndex);
 
-            // 4. คะแนนช่อง Official GMM & RS
+            // 5. ดันคะแนน Official GMM & RS ให้เพลงไทยเล่นได้แน่นอน
             if (GMM_RS_CHANNELS.some(ch => channelUpper.includes(ch))) {
-                score += 15;
+                score += 25;
             } else if (["GMM", "GRAMMY", "GENIE", "RS", "อาร์สยาม"].some(kw => titleUpper.includes(kw))) {
+                score += 15;
+            }
+
+            // 6. คะแนนมาสเตอร์ดนตรีแท้
+            if (MASTER_KEYWORDS.some(pref => titleUpper.includes(pref))) {
                 score += 10;
             }
 
-            // 5. คะแนนมาสเตอร์ดนตรีแท้ / คาราโอเกะ
-            if (MASTER_KEYWORDS.some(pref => titleUpper.includes(pref))) {
-                score += 8;
-            }
-
-            // 6. คะแนนภาพชัด
-            if (["1080P", "1080", "FHD", "4K", "HD"].some(hd => titleUpper.includes(hd))) {
-                score += 4;
-            }
-
-            // 7. หักคะแนนไฟล์สังเคราะห์ MIDI
+            // 7. หักคะแนน MIDI
             if (MIDI_KEYWORDS.some(midi => titleUpper.includes(midi))) {
                 score -= 15;
             }
@@ -158,7 +156,6 @@ async function handleRequest(request) {
             });
         }
 
-        // เรียงลำดับตามคะแนนความแม่นยำสูงสุด
         results.sort((a, b) => b.score - a.score);
 
         const cleanResults = results.slice(0, 20);
@@ -184,30 +181,21 @@ async function handleRequest(request) {
     }
 }
 
-/*
- * =====================================================
- * Title Relevance Algorithm
- * =====================================================
- */
 function calculateTitleRelevance(title, query) {
     if (!title || !query) return 0;
     const q = query.trim().toLowerCase();
     const t = title.toLowerCase();
 
-    // ลบแท็กในวงเล็บและคำว่าคาราโอเกะออก เพื่อดึงชื่อเพลงเพียวๆ
     let cleanT = t.replace(/\[.*?\]|\(.*?\)|【.*?】/g, "");
     cleanT = cleanT.replace(/คาราโอเกะ/g, "").replace(/karaoke/g, "").trim();
 
-    // แยกส่วนด้วยเครื่องหมายขีด (เช่น "เราและนาย - LOSO")
     const parts = cleanT.split("-").map(p => p.trim()).filter(Boolean);
 
-    // 1. ชื่อเพลงตรงกับคำค้นหาแบบเป๊ะๆ 100%
     for (const p of parts) {
         if (p === q) return 50;
         if (p.startsWith(q + " ") || p.endsWith(" " + q)) return 35;
     }
 
-    // 2. คำค้นหาปรากฏเป็นคำเดี่ยวๆ มีขอบเขตชัดเจน
     try {
         const escapedQ = escapeRegExp(q);
         const boundaryPattern = new RegExp(`(?:^|[\\s\\-\\(\\[\\{\\"\\'|/])${escapedQ}(?:$|[\\s\\-\\)\\]\\}\\"\\'|/])`, "i");
@@ -216,7 +204,6 @@ function calculateTitleRelevance(title, query) {
         }
     } catch (e) {}
 
-    // 3. ปรากฏเป็นส่วนหนึ่งของชื่อเพลง
     if (t.includes(q)) {
         return 10;
     }
@@ -228,13 +215,7 @@ function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/*
- * =====================================================
- * YouTube Search (Innertube + Fallback สองชั้น)
- * =====================================================
- */
 async function searchYouTube(query) {
-    // 1. ดึงผ่าน Innertube API
     try {
         const YT_KEY = 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
         const res = await fetch(`https://www.youtube.com/youtubei/v1/search?key=${YT_KEY}`, {
@@ -277,10 +258,9 @@ async function searchYouTube(query) {
             if (results.length > 0) return results;
         }
     } catch (e) {
-        console.warn("Innertube search fallback:", e);
+        console.warn("Innertube fallback:", e);
     }
 
-    // 2. สำรองด้วยการดึงหน้า HTML
     try {
         const url = "https://www.youtube.com/results?search_query=" + encodeURIComponent(query);
         const response = await fetch(url, {
@@ -316,18 +296,11 @@ async function searchYouTube(query) {
                 if (results.length > 0) return results;
             }
         }
-    } catch (e) {
-        console.error("HTML search error:", e);
-    }
+    } catch (e) {}
 
     return [];
 }
 
-/*
- * =====================================================
- * Helpers
- * =====================================================
- */
 function walk(value, callback) {
     if (!value || typeof value !== "object") return;
     callback(value);
