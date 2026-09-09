@@ -70,10 +70,17 @@ async function handleRequest(request) {
             }
         });
 
-        // คีย์เวิร์ดคัดกรองตามตรรกะ Python
+        // คีย์เวิร์ดคัดกรอง MV
         const MV_KEYWORDS = [
             "OFFICIAL MV", "OFFICIAL MUSIC VIDEO", "MUSIC VIDEO",
             "[MV]", "(MV)", " TEASER ", "REACTION"
+        ];
+
+        // ช่องและคีย์เวิร์ดที่บล็อกการเล่นภายนอก (Embedding Disabled / Error 150)
+        // โดยเฉพาะ Sing King ที่ติดลิขสิทธิ์ค่ายเพลงสากลห้ามเล่นนอก YouTube 100%
+        const BLOCKED_EMBED_KEYWORDS = [
+            "SING KING",
+            "SINGKING"
         ];
 
         const GMM_RS_CHANNELS = [
@@ -96,7 +103,15 @@ async function handleRequest(request) {
             const channel = entry.channel || "";
             const channelUpper = channel.toUpperCase();
 
-            // 1. กรอง MV ออก ยกเว้นคลิปนั้นจะระบุชัดว่าเป็น Karaoke
+            // ✨ 1. ตัดคลิปจากช่อง Sing King ออกทั้งหมด 100% เพื่อไม่ให้ติดจอแจ้งเตือนลิขสิทธิ์บนทีวี
+            const isBlockedEmbed = BLOCKED_EMBED_KEYWORDS.some(kw => 
+                channelUpper.includes(kw) || titleUpper.includes(kw)
+            );
+            if (isBlockedEmbed) {
+                continue;
+            }
+
+            // 2. กรอง MV ออก ยกเว้นคลิปนั้นจะระบุชัดว่าเป็น Karaoke
             const isKaraoke = titleUpper.includes("KARAOKE") || title.includes("คาราโอเกะ");
             const isPureMV = MV_KEYWORDS.some(kw => titleUpper.includes(kw)) && !isKaraoke;
             if (isPureMV) {
@@ -105,30 +120,30 @@ async function handleRequest(request) {
 
             let score = 0;
 
-            // 2. คะแนนความตรงของชื่อเพลง (คำนวณตามสูตร)
+            // 3. คะแนนความตรงของชื่อเพลง (คำนวณตามสูตร)
             score += calculateTitleRelevance(title, q);
 
-            // 3. คะแนนอันดับความนิยมดั้งเดิมจาก YouTube
+            // 4. คะแนนอันดับความนิยมดั้งเดิมจาก YouTube
             score += Math.max(0, 25 - entry.originalIndex);
 
-            // 4. คะแนนช่อง Official GMM & RS
+            // 5. คะแนนช่อง Official GMM & RS
             if (GMM_RS_CHANNELS.some(ch => channelUpper.includes(ch))) {
                 score += 15;
             } else if (["GMM", "GRAMMY", "GENIE", "RS", "อาร์สยาม"].some(kw => titleUpper.includes(kw))) {
                 score += 10;
             }
 
-            // 5. คะแนนมาสเตอร์ดนตรีแท้ / คาราโอเกะ
+            // 6. คะแนนมาสเตอร์ดนตรีแท้ / คาราโอเกะ
             if (MASTER_KEYWORDS.some(pref => titleUpper.includes(pref))) {
                 score += 8;
             }
 
-            // 6. คะแนนภาพชัด
+            // 7. คะแนนภาพชัด
             if (["1080P", "1080", "FHD", "4K", "HD"].some(hd => titleUpper.includes(hd))) {
                 score += 4;
             }
 
-            // 7. หักคะแนนไฟล์สังเคราะห์ MIDI
+            // 8. หักคะแนนไฟล์สังเคราะห์ MIDI
             if (MIDI_KEYWORDS.some(midi => titleUpper.includes(midi))) {
                 score -= 15;
             }
@@ -175,7 +190,7 @@ async function handleRequest(request) {
 
 /*
  * =====================================================
- * Title Relevance Algorithm (แก้ไข JavaScript Method แล้ว)
+ * Title Relevance Algorithm
  * =====================================================
  */
 function calculateTitleRelevance(title, query) {
@@ -193,7 +208,6 @@ function calculateTitleRelevance(title, query) {
     // 1. ชื่อเพลงตรงกับคำค้นหาแบบเป๊ะๆ 100%
     for (const p of parts) {
         if (p === q) return 50;
-        // แก้ไขเป็น .startsWith() และ .endsWith() ที่ถูกต้องใน JavaScript
         if (p.startsWith(q + " ") || p.endsWith(" " + q)) return 35;
     }
 
@@ -224,7 +238,7 @@ function escapeRegExp(string) {
  * =====================================================
  */
 async function searchYouTube(query) {
-    // 1. ลองผ่าน Innertube API ก่อน (ไว และไม่โดนบล็อก)
+    // 1. ลองผ่าน Innertube API ก่อน
     try {
         const YT_KEY = 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
         const res = await fetch(`https://www.youtube.com/youtubei/v1/search?key=${YT_KEY}`, {
