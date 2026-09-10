@@ -1,0 +1,9 @@
+[build]
+  publish = "."
+  functions = "api"
+
+[[redirects]]
+  from = "/api/search"
+  to = "/.netlify/functions/search"
+  status = 200
+
