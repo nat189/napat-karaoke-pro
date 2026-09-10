@@ -1,21 +1,16 @@
-# 🎤 Napat Karaoke Pro (Cloudflare Pages Edition)
+# 🎤 Napat Karaoke Pro
 
-ระบบเว็บแอปพลิเคชันคาราโอเกะ 2 หน้าจอ (จอแสดงผล Smart TV + รีโมตควบคุมบนมือถือ) ทำงานแบบ **100% Serverless** บน **Cloudflare Pages & Functions** โดยไม่ต้องเปิดคอมพิวเตอร์เซิร์ฟเวอร์ทิ้งไว้ ไม่ต้องติดตั้ง Node.js หรือ Docker และไม่มีค่าใช้จ่าย
+ระบบเว็บแอปพลิเคชันคาราโอเกะแยก 2 หน้าจอ (TV Display + Mobile Remote) ทำงานแบบเรียลไทม์ผ่าน WebRTC (PeerJS) ออกแบบให้รองรับการทำงานได้ทั้ง 3 แพลตฟอร์ม: Local SBC (NanoPi / Raspberry Pi), Cloudflare Pages Functions และ Vercel / Node.js Serverless API
 
 ---
 
 ## ✨ คุณสมบัติเด่น (Features)
 
-* **⚡ 100% Serverless & Zero Maintenance:** รันโค้ดฝั่ง Client และ Edge Functions ผ่าน Cloudflare Pages ฟรีตลอดชีพ
-* **📱 Real-time Mobile Controller (WebRTC P2P):** เชื่อมต่อรีโมตมือถือกับจอทีวีโดยตรงผ่าน **PeerJS** ตอบสนองฉับไว เสถียร ไม่เปลืองแบนด์วิธเซิร์ฟเวอร์
-* **🎯 Unlimited Karaoke Search:** ค้นหาเพลงผ่าน YouTube Web Scraping บน Functions (`/api/search`) ไม่ใช้ YouTube Data API Key หมดปัญหาโควตาเต็ม 10,000 หน่วยประจำวัน
-* **📺 Smart Display TV:**
-  * สุ่มรหัสห้องอัตโนมัติ พร้อมสร้าง **QR Code** สำหรับสแกนเข้าใช้งานได้ทันที
-  * ซ่อน QR Code และคิวเพลงอัตโนมัติหลังเพลงเริ่ม 15 วินาที และดึงกลับมาแสดงก่อนจบเพลง 15 วินาที
-  * ระบบสลับภาพพื้นหลังแบบ Crossfade สุ่มภาพคมชัดจาก Bing Wallpaper อัตโนมัติทุก 20 วินาทีเมื่อไม่มีการเล่นเพลง
-  * บล็อกและปิด Subtitle / คำบรรยายแปลภาษาของ YouTube ถาวร ไม่ให้บดบังเนื้อเพลงคาราโอเกะ
-* **🎉 Singing Score FX:** แสดงคะแนนร้องเพลงตัวเลขยักษ์ (80–100 คะแนน) พร้อมคำชมสุดกวน 5 วินาทีสุดท้ายก่อนตัดเข้าเพลงถัดไป
-* **🎛️ Full Remote Control:** ค้นหาเพลง, จองเพลง, สั่งข้าม, หยุด/เล่นต่อ, แทรกคิวขึ้น-ลง, และกดค้าง 2 วินาทีเพื่อลบเพลงออกจากคิว
+* **Dual-Screen Architecture:** แยกหน้าจอแสดงผลบนทีวี (`display.html`) และหน้ารีโมตควบคุมบนมือถือ (`controller.html`)
+* **Realtime Synchronization:** ควบคุมคิวเพลง ข้ามเพลง สลับลำดับเพลง และเล่น/หยุดเพลงทันทีผ่าน PeerJS (WebRTC DataChannel)
+* **Smart UI Auto-Hide:** แถบสถานะ กล่องคิวเพลง และ QR Code ซ่อนตัวอัตโนมัติขณะเล่นเพลง และปรากฏขึ้นเมื่อแตะหน้าจอหรือขยับเมาส์
+* **Multi-Platform Search API:** รองรับระบบค้นหา YouTube Karaoke ในตัว ทั้งแบบ Node.js Native (`server.js`), Cloudflare Pages (`functions/api/`), และ Serverless Route (`api/`)
+* **Zero-Dependency Native Server:** ไม่ต้องติดตั้งแพ็กเกจภายนอก ประหยัด CPU และ RAM เหมาะสำหรับบอร์ดขนาดเล็ก
 
 ---
 
@@ -23,10 +18,71 @@
 
 ```text
 napat-karaoke-pro/
-├── functions/
+├── api/                  # Endpoint API ค้นหาเพลง (สำหรับ Vercel / Serverless / Node Routes)
+│   └── search.js
+├── functions/            # Endpoint API ค้นหาเพลง (สำหรับ Cloudflare Pages Functions)
 │   └── api/
-│       └── search.js       # Backend Function ดึงผลการค้นหาเพลงคาราโอเกะจาก YouTube
-├── controller.html         # หน้ารีโมตคอนโทรลสำหรับสมาร์ตโฟน
-├── display.html            # หน้าจอแสดงผลหลักสำหรับ Smart TV / จอคอมพิวเตอร์
-├── index.html              # หน้าแรกสำหรับเลือกเปิดหน้าจอหรือเข้าใช้งาน
-└── README.md               # คู่มือการติดตั้งและใช้งานโปรเจกต์
+│       └── search.js
+├── controller.html       # หน้าจอด้านรีโมตมือถือ (ค้นหาเพลง, ส่งคิว, ควบคุม)
+├── display.html          # หน้าจอสำหรับเปิดบน TV (แสดงวิดีโอ, คิวเพลง, QR Code)
+├── index.html            # หน้า All-in-One (โหมดเล่นบนจอเดียว)
+├── package.json          # กำหนดคำสั่งรันและ Metadata ของโปรเจกต์
+├── server.js             # HTTP Server แบบ Native สำหรับรันบน NanoPi / Linux SBC
+└── README.md             # เอกสารแนะนำการติดตั้งและใช้งาน
+
+🚀 1. การติดตั้งและใช้งานบน NanoPi / Linux SBC
+ติดตั้ง Node.js และ PM2
+sudo apt update
+sudo apt install -y nodejs npm
+sudo npm install -g pm2
+
+ดึงโปรเจกต์และสั่งรัน
+cd /opt
+git clone [https://github.com/nat189/napat-karaoke-pro.git](https://github.com/nat189/napat-karaoke-pro.git)
+cd napat-karaoke-pro
+
+pm2 start server.js --name "karaoke"
+pm2 save
+pm2 startup
+
+URL สำหรับเข้าใช้งาน
+​หน้าจอ TV Display: http://<IP_เครื่อง>:8085/display.html
+​หน้ารีโมตมือถือ Controller: http://<IP_เครื่อง>:8085/controller.html
+​หน้า All-in-One: http://<IP_เครื่อง>:8085/index.html
+
+
+☁️ 2. การ Deploy บน Cloudflare Pages (ผ่าน functions/api/)
+เชื่อมต่อ GitHub Repository กับ Cloudflare Pages
+ตั้งค่าการสร้าง (Build Settings):
+Framework preset: None
+Build command: (เว้นว่าง)
+Build output directory: /
+กด Save and Deploy
+(Cloudflare Pages จะนำไฟล์ในโฟลเดอร์ functions/api/search.js มาทำงานเป็น Serverless API ให้โดยอัตโนมัติ)
+
+⚡ 3. การ Deploy บน Vercel (ผ่าน api/)
+นำเข้า Repository เข้าสู่ Vercel
+ตั้งค่า Output Directory เป็น Root (./)
+กด Deploy
+(Vercel จะตรวจพบโฟลเดอร์ api/search.js และสร้าง Serverless Function สำหรับค้นหาเพลงให้อัตโนมัติ)
+
+
+คำสั่งจัดการระบบประจำวัน (บน NanoPi)
+
+# ตรวจสอบสถานะ
+pm2 status
+
+# ดู Logs การทำงาน
+pm2 logs karaoke
+
+# รีสตาร์ตระบบ
+pm2 restart karaoke
+
+# อัปเดตโค้ดล่าสุดจาก GitHub
+cd /opt/napat-karaoke-pro && git pull && pm2 restart karaoke
+
+
+
+
+
+🔄 คำสั่งจัดการระบบประจำวัน (บน NanoPi)
