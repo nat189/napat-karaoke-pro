@@ -139,39 +139,43 @@
             display: none;
         }
 
-        /* SCORE OVERLAY (POPUP แสดงคะแนน 6 วินาที) */
+        /* SCORE OVERLAY (แบบสมูท ปรับเวลาและ Fade-in นุ่มนวล) */
         #score-overlay {
             position: fixed;
             inset: 0;
             z-index: 1000;
-            display: none;
+            display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.88);
+            background: rgba(0, 0, 0, 0.86);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s ease;
         }
 
         #score-overlay.show {
-            display: flex;
+            opacity: 1;
+            pointer-events: auto;
         }
 
         .score-card {
             text-align: center;
-            animation: scorePop 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: scorePop 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             padding: 24px;
         }
 
         .score-label {
-            font-size: 20px;
+            font-size: 19px;
             font-weight: 800;
             color: rgba(255, 255, 255, 0.9);
             letter-spacing: 0.5px;
         }
 
         .score-number {
-            margin-top: 8px;
-            font-size: clamp(84px, 18vw, 150px);
+            margin-top: 6px;
+            font-size: clamp(80px, 17vw, 140px);
             line-height: 0.95;
             font-weight: 900;
             color: #ff6a00;
@@ -179,8 +183,8 @@
         }
 
         .score-message {
-            margin-top: 14px;
-            font-size: 24px;
+            margin-top: 12px;
+            font-size: 22px;
             font-weight: 900;
             color: #fff;
         }
@@ -192,8 +196,8 @@
         }
 
         @keyframes scorePop {
-            0% { opacity: 0; transform: scale(0.6); }
-            100% { opacity: 1; transform: scale(1); }
+            0% { transform: scale(0.75); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
 
         /* CONTROLS */
@@ -574,13 +578,13 @@
 
 </div>
 
-<!-- SCORE OVERLAY (POPUP คะแนนร้องเพลง 6 วินาที) -->
+<!-- SCORE OVERLAY -->
 <div id="score-overlay">
     <div class="score-card">
         <div class="score-label">🎤 คะแนนเพลงนี้</div>
         <div id="score-number" class="score-number">95</div>
         <div id="score-message" class="score-message">สุดยอด! 🔥</div>
-        <div class="score-sub">กำลังเตรียมเพลงถัดไป...</div>
+        <div class="score-sub">กำลังไปเพลงถัดไป...</div>
     </div>
 </div>
 
@@ -635,7 +639,6 @@
             return;
         }
 
-        // เมื่อเพลงเล่นจนจบ (Ended)
         if (event.data === YT.PlayerState.ENDED) {
             stopScoreWatcher();
             finishCurrentSong();
@@ -643,7 +646,7 @@
     }
 
     /* =========================================================
-       SCORE WATCHER & POPUP (ตัดจบ 10 วิ + โชว์คะแนน 6 วินาที)
+       SCORE WATCHER & POPUP (ตัดจบสมูท 3.5 วินาที + โชว์คะแนน 3.5 วินาที)
     ========================================================= */
     function startScoreWatcher() {
         stopScoreWatcher();
@@ -652,13 +655,14 @@
             try {
                 const current = player.getCurrentTime();
                 const duration = player.getDuration();
-                // ✨ ถ้าเพลงยาวเกิน 30 วิ และเหลือ 10 วินาทีสุดท้าย ให้ตัดเข้าคะแนนทันที เพื่อไม่ให้การ์ด YouTube บัง
-                if (duration > 30 && (duration - current) <= 10 && (duration - current) > 0) {
+                
+                // ✨ ตรวจจับช่วง 3.5 วินาทีสุดท้าย: ท่อนร้องจบ ดนตรีเฟดลงแล้ว ไม่ตัดเพลงเร็วจนเกินไป
+                if (duration > 20 && (duration - current) <= 3.5 && (duration - current) > 0) {
                     stopScoreWatcher();
                     finishCurrentSong();
                 }
             } catch (e) {}
-        }, 1000);
+        }, 500);
     }
 
     function stopScoreWatcher() {
@@ -673,7 +677,7 @@
         isFinishing = true;
         stopScoreWatcher();
 
-        // 1. หยุดคลิปวิดีโอทันทีเพื่อปิด End Screen Cards
+        // 1. หยุดคลิปทันที เพื่อดักปิด End Screen Cards
         if (player && typeof player.stopVideo === "function") {
             try { player.stopVideo(); } catch (e) {}
         }
@@ -681,14 +685,14 @@
         // 2. เด้งโชว์หน้าต่างคะแนน
         showScore();
 
-        // 3. แสดงคะแนนค้างไว้ 6 วินาทีเต็ม (6000ms) แล้วจึงตัดเข้าเพลงถัดไป
+        // 3. แสดงคะแนนกระชับพอดีๆ 3.5 วินาที (3500ms) แล้วจึงตัดเข้าเพลงถัดไป
         clearTimeout(scoreTimer);
         scoreTimer = setTimeout(() => {
             hideScore();
             currentQueue.shift();
             playCurrentSong();
             isFinishing = false;
-        }, 6000);
+        }, 3500);
     }
 
     function showScore() {
@@ -812,7 +816,6 @@
 
             let songs = data.results;
 
-            // Smart Client-side Sorting: เสริมความแม่นยำกรณีหาคำสั้นอย่าง "เรา"
             songs = sortSearchResults(songs, rawQ);
 
             count.innerText = `${songs.length} รายการ`;
@@ -845,19 +848,16 @@
             let scoreA = 0;
             let scoreB = 0;
 
-            // กรณีพิมพ์คำว่า "เรา" ดัน Big Ass, Bodyslam, Loso ขึ้นก่อน
             if (q === "เรา") {
                 const rockStars = ["big ass", "bodyslam", "loso", "บิ๊กแอส", "บอดี้สแลม", "โลโซ", "เราและนาย"];
                 if (rockStars.some(k => titleA.includes(k) || channelA.includes(k))) scoreA += 50;
                 if (rockStars.some(k => titleB.includes(k) || channelB.includes(k))) scoreB += 50;
             }
 
-            // ค่ายเพลง Official
             const majors = ["gmm", "grammy", "genie", "rs", "อาร์สยาม"];
             if (majors.some(k => channelA.includes(k) || titleA.includes(k))) scoreA += 20;
             if (majors.some(k => channelB.includes(k) || titleB.includes(k))) scoreB += 20;
 
-            // ตัดคะแนนเพลง MIDI / คีย์บอร์ด
             const midiList = ["midi", "soundfont", "อิเล็กโทน", "คีย์บอร์ด"];
             if (midiList.some(k => titleA.includes(k))) scoreA -= 20;
             if (midiList.some(k => titleB.includes(k))) scoreB -= 20;
