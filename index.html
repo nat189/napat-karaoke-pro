@@ -554,7 +554,6 @@
     }
 
     function onPlayerStateChange(event) {
-        // เมื่อเพลงเล่นจบ (YT.PlayerState.ENDED = 0)
         if (event.data === YT.PlayerState.ENDED) {
             skipSong();
         }
@@ -620,12 +619,12 @@
     }
 
     /* =========================================================
-       SEARCH
+       SEARCH & SMART SORTING
     ========================================================= */
     async function searchMusic() {
         const input = document.getElementById("search-input");
-        const q = input.value.trim();
-        if (!q) {
+        const rawQ = input.value.trim();
+        if (!rawQ) {
             input.focus();
             return;
         }
@@ -637,7 +636,7 @@
         count.innerText = "";
 
         try {
-            const response = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+            const response = await fetch(`/api/search?q=${encodeURIComponent(rawQ)}`);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
             const data = await response.json();
@@ -645,7 +644,11 @@
                 throw new Error(data?.error || "รูปแบบข้อมูลไม่ถูกต้อง");
             }
 
-            const songs = data.results;
+            let songs = data.results;
+
+            // ✨ Smart Client-side Sorting: เสริมความแม่นยำกรณีหาคำสั้นอย่าง "เรา"
+            songs = sortSearchResults(songs, rawQ);
+
             count.innerText = `${songs.length} รายการ`;
 
             if (songs.length === 0) {
@@ -662,6 +665,39 @@
                 </div>
             `;
         }
+    }
+
+    function sortSearchResults(songs, query) {
+        const q = query.trim().toLowerCase();
+
+        return songs.slice().sort((a, b) => {
+            const titleA = (a.title || "").toLowerCase();
+            const titleB = (b.title || "").toLowerCase();
+            const channelA = (a.channel || a.author || "").toLowerCase();
+            const channelB = (b.channel || b.author || "").toLowerCase();
+
+            let scoreA = 0;
+            let scoreB = 0;
+
+            // กรณีพิมพ์คำว่า "เรา" ดัน Big Ass, Bodyslam, Loso ขึ้นก่อน
+            if (q === "เรา") {
+                const rockStars = ["big ass", "bodyslam", "loso", "บิ๊กแอส", "บอดี้สแลม", "โลโซ", "เราและนาย"];
+                if (rockStars.some(k => titleA.includes(k) || channelA.includes(k))) scoreA += 50;
+                if (rockStars.some(k => titleB.includes(k) || channelB.includes(k))) scoreB += 50;
+            }
+
+            // ค่ายเพลง Official
+            const majors = ["gmm", "grammy", "genie", "rs", "อาร์สยาม"];
+            if (majors.some(k => channelA.includes(k) || titleA.includes(k))) scoreA += 20;
+            if (majors.some(k => channelB.includes(k) || titleB.includes(k))) scoreB += 20;
+
+            // ตัดคะแนนเพลง MIDI / คีย์บอร์ด
+            const midiList = ["midi", "soundfont", "อิเล็กโทน", "คีย์บอร์ด"];
+            if (midiList.some(k => titleA.includes(k))) scoreA -= 20;
+            if (midiList.some(k => titleB.includes(k))) scoreB -= 20;
+
+            return scoreB - scoreA;
+        });
     }
 
     function createResultHtml(song) {
@@ -753,7 +789,7 @@
 
     function moveSong(index, direction) {
         const targetIndex = direction === 'up' ? index - 1 : index + 1;
-        if (targetIndex < 1 || targetIndex >= currentQueue.length) return; // ไม่ให้แซงเพลงกำลังเล่น (index 0)
+        if (targetIndex < 1 || targetIndex >= currentQueue.length) return;
 
         const temp = currentQueue[index];
         currentQueue[index] = currentQueue[targetIndex];
