@@ -436,7 +436,8 @@
             align-items: center;
             justify-content: center;
             pointer-events: none;
-            background: radial-gradient(circle, rgba(255, 106, 0, 0.16), transparent 55%);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
         }
 
         #score-overlay.show { display: flex; }
@@ -593,7 +594,7 @@
         let scoreWatcher = null;
         let toastTimer = null;
 
-        // ✨ ระบบจับเวลาเช็กว่าเล่นจริงหรือไม่ (แก้ปัญหาจอค้าง 100%)
+        // ระบบจับเวลาเช็กว่าเล่นจริงหรือไม่
         let hasStartedPlaying = false;
         let playWatchdog = null;
         let fallbackCount = 0;
@@ -872,7 +873,6 @@
             if (player && typeof player.loadVideoById === "function") {
                 player.loadVideoById(current.videoId);
 
-                // ✨ นับถอยหลัง 5 วินาที: หากวิดีโอไม่เริ่มเล่น (ติดจอดำ Sing King) ให้สั่งแก้ทันที
                 playWatchdog = setTimeout(() => {
                     if (!hasStartedPlaying) {
                         console.warn("Watchdog ทำงาน: วิดีโอติดลิขสิทธิ์ ไม่สามารถเริ่มเล่นได้");
@@ -884,9 +884,6 @@
             updateQueueUI();
         }
 
-        // =========================================================
-        // สลับคลิปอัตโนมัติเมื่อเจอเพลงติดลิขสิทธิ์ Embed
-        // =========================================================
         async function handleUnplayableVideo() {
             clearTimeout(playWatchdog);
             if (isTransitioning || queue.length === 0) return;
@@ -898,7 +895,6 @@
                 showTvToast("⚠️ เพลงนี้ติดลิขสิทธิ์ กำลังสลับหาช่องอื่น...");
 
                 try {
-                    // ล้างคำว่า sing king ออก แล้วค้นหาคาราโอเกะช่องอื่น
                     let cleanQuery = (current.title || "")
                         .replace(/sing\s*king/gi, "")
                         .replace(/official\s*karaoke/gi, "")
@@ -910,7 +906,6 @@
                     if (response.ok) {
                         const data = await response.json();
                         if (data && data.success && Array.isArray(data.results)) {
-                            // ตัดช่อง Sing King ออกทั้งหมด 100%
                             const alt = data.results.find(item => {
                                 const ch = (item.channel || item.author || "").toLowerCase();
                                 const ti = (item.title || "").toLowerCase();
@@ -943,7 +938,6 @@
                 }
             }
 
-            // ถ้าหาคลิปสำรองไม่ได้เลย ให้ข้ามทันที
             showTvToast("❌ ข้ามไปเพลงถัดไปเนื่องจากติดลิขสิทธิ์");
             fallbackCount = 0;
             setTimeout(() => {
@@ -993,6 +987,11 @@
             hasStartedPlaying = false;
             stopScoreWatcher();
             clearTimeout(nextSongTimer);
+
+            // หยุดวิดีโอทันทีเพื่อปิด End Screen Cards ไม่ให้โผล่
+            if (player && typeof player.stopVideo === "function") {
+                try { player.stopVideo(); } catch (e) {}
+            }
 
             queue.shift();
             syncQueue();
@@ -1068,7 +1067,6 @@
         function onPlayerStateChange(event) {
             if (!window.YT || !YT.PlayerState) return;
 
-            // เมื่อเพลงเริ่มส่งเสียงเล่นจริง ๆ
             if (event.data === YT.PlayerState.PLAYING) {
                 hasStartedPlaying = true;
                 clearTimeout(playWatchdog);
@@ -1096,6 +1094,7 @@
             handleUnplayableVideo();
         }
 
+        // ตรวจจับเวลาช่วงท้ายเพลง: ตัดจบช่วงเหลือ 10 วินาที เพื่อไม่ให้ End Screen Cards โผล่มากวน
         function startScoreWatcher() {
             stopScoreWatcher();
             scoreWatcher = setInterval(() => {
@@ -1103,8 +1102,9 @@
                 try {
                     const current = player.getCurrentTime();
                     const duration = player.getDuration();
-                    if (duration > 0 && duration - current <= 5 && duration - current > 0) {
-                        showScore();
+                    if (duration > 30 && (duration - current) <= 10 && (duration - current) > 0) {
+                        stopScoreWatcher();
+                        finishCurrentSong();
                     }
                 } catch (error) {}
             }, 1000);
