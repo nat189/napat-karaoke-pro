@@ -139,6 +139,63 @@
             display: none;
         }
 
+        /* SCORE OVERLAY (POPUP แสดงคะแนน 6 วินาที) */
+        #score-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        #score-overlay.show {
+            display: flex;
+        }
+
+        .score-card {
+            text-align: center;
+            animation: scorePop 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            padding: 24px;
+        }
+
+        .score-label {
+            font-size: 20px;
+            font-weight: 800;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: 0.5px;
+        }
+
+        .score-number {
+            margin-top: 8px;
+            font-size: clamp(84px, 18vw, 150px);
+            line-height: 0.95;
+            font-weight: 900;
+            color: #ff6a00;
+            text-shadow: 0 0 25px rgba(255, 106, 0, 0.5), 0 0 70px rgba(255, 45, 85, 0.35);
+        }
+
+        .score-message {
+            margin-top: 14px;
+            font-size: 24px;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .score-sub {
+            margin-top: 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        @keyframes scorePop {
+            0% { opacity: 0; transform: scale(0.6); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
         /* CONTROLS */
         .main-controls {
             display: grid;
@@ -517,6 +574,16 @@
 
 </div>
 
+<!-- SCORE OVERLAY (POPUP คะแนนร้องเพลง 6 วินาที) -->
+<div id="score-overlay">
+    <div class="score-card">
+        <div class="score-label">🎤 คะแนนเพลงนี้</div>
+        <div id="score-number" class="score-number">95</div>
+        <div id="score-message" class="score-message">สุดยอด! 🔥</div>
+        <div class="score-sub">กำลังเตรียมเพลงถัดไป...</div>
+    </div>
+</div>
+
 <div id="toast"></div>
 
 <!-- YouTube IFrame API -->
@@ -531,6 +598,9 @@
     let currentQueue = [];
     let isPaused = false;
     let toastTimer = null;
+    let scoreWatcher = null;
+    let scoreTimer = null;
+    let isFinishing = false;
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
@@ -540,7 +610,8 @@
                 autoplay: 1,
                 controls: 1,
                 rel: 0,
-                modestbranding: 1
+                modestbranding: 1,
+                playsinline: 1
             },
             events: {
                 'onReady': onPlayerReady,
@@ -554,15 +625,104 @@
     }
 
     function onPlayerStateChange(event) {
-        if (event.data === YT.PlayerState.ENDED) {
-            skipSong();
+        if (event.data === YT.PlayerState.PLAYING) {
+            startScoreWatcher();
+            return;
         }
+
+        if (event.data === YT.PlayerState.PAUSED) {
+            stopScoreWatcher();
+            return;
+        }
+
+        // เมื่อเพลงเล่นจนจบ (Ended)
+        if (event.data === YT.PlayerState.ENDED) {
+            stopScoreWatcher();
+            finishCurrentSong();
+        }
+    }
+
+    /* =========================================================
+       SCORE WATCHER & POPUP (ตัดจบ 10 วิ + โชว์คะแนน 6 วินาที)
+    ========================================================= */
+    function startScoreWatcher() {
+        stopScoreWatcher();
+        scoreWatcher = setInterval(() => {
+            if (!player || typeof player.getCurrentTime !== "function" || typeof player.getDuration !== "function") return;
+            try {
+                const current = player.getCurrentTime();
+                const duration = player.getDuration();
+                // ✨ ถ้าเพลงยาวเกิน 30 วิ และเหลือ 10 วินาทีสุดท้าย ให้ตัดเข้าคะแนนทันที เพื่อไม่ให้การ์ด YouTube บัง
+                if (duration > 30 && (duration - current) <= 10 && (duration - current) > 0) {
+                    stopScoreWatcher();
+                    finishCurrentSong();
+                }
+            } catch (e) {}
+        }, 1000);
+    }
+
+    function stopScoreWatcher() {
+        if (scoreWatcher) {
+            clearInterval(scoreWatcher);
+            scoreWatcher = null;
+        }
+    }
+
+    function finishCurrentSong() {
+        if (isFinishing || currentQueue.length === 0) return;
+        isFinishing = true;
+        stopScoreWatcher();
+
+        // 1. หยุดคลิปวิดีโอทันทีเพื่อปิด End Screen Cards
+        if (player && typeof player.stopVideo === "function") {
+            try { player.stopVideo(); } catch (e) {}
+        }
+
+        // 2. เด้งโชว์หน้าต่างคะแนน
+        showScore();
+
+        // 3. แสดงคะแนนค้างไว้ 6 วินาทีเต็ม (6000ms) แล้วจึงตัดเข้าเพลงถัดไป
+        clearTimeout(scoreTimer);
+        scoreTimer = setTimeout(() => {
+            hideScore();
+            currentQueue.shift();
+            playCurrentSong();
+            isFinishing = false;
+        }, 6000);
+    }
+
+    function showScore() {
+        const overlay = document.getElementById("score-overlay");
+        if (!overlay) return;
+
+        const score = Math.floor(80 + Math.random() * 21); // สุ่ม 80 - 100
+        const messages = [
+            "สุดยอด! 🔥",
+            "นักร้องตัวจริง! 🎤",
+            "พลังเสียงเป๊ะมาก! 💥",
+            "ระดับมืออาชีพ! ⭐",
+            "คืนนี้มีดาว! 🌟"
+        ];
+
+        document.getElementById("score-number").innerText = score;
+        document.getElementById("score-message").innerText = messages[Math.floor(Math.random() * messages.length)];
+        overlay.classList.add("show");
+    }
+
+    function hideScore() {
+        const overlay = document.getElementById("score-overlay");
+        if (overlay) overlay.classList.remove("show");
+        clearTimeout(scoreTimer);
     }
 
     /* =========================================================
        CORE PLAYBACK
     ========================================================= */
     function playCurrentSong() {
+        stopScoreWatcher();
+        hideScore();
+        isFinishing = false;
+
         const placeholder = document.getElementById('player-placeholder');
         if (currentQueue.length === 0) {
             placeholder.classList.remove('hidden');
@@ -604,6 +764,9 @@
 
     function skipSong() {
         if (currentQueue.length === 0) return;
+        stopScoreWatcher();
+        hideScore();
+        isFinishing = false;
         currentQueue.shift();
         playCurrentSong();
         showToast("⏭️ ข้ามเพลงเรียบร้อย");
@@ -611,6 +774,9 @@
 
     function retrySong() {
         if (!isPlayerReady || !player || currentQueue.length === 0) return;
+        stopScoreWatcher();
+        hideScore();
+        isFinishing = false;
         player.seekTo(0);
         player.playVideo();
         isPaused = false;
@@ -646,7 +812,7 @@
 
             let songs = data.results;
 
-            // ✨ Smart Client-side Sorting: เสริมความแม่นยำกรณีหาคำสั้นอย่าง "เรา"
+            // Smart Client-side Sorting: เสริมความแม่นยำกรณีหาคำสั้นอย่าง "เรา"
             songs = sortSearchResults(songs, rawQ);
 
             count.innerText = `${songs.length} รายการ`;
