@@ -29,9 +29,9 @@ async function handleRequest(request) {
   }
 
   const url = new URL(request.url);
-  const q = (url.searchParams.get("q") || "").trim();
+  const rawQ = (url.searchParams.get("q") || "").trim();
 
-  if (!q) {
+  if (!rawQ) {
     return json(
       {
         success: false,
@@ -44,8 +44,8 @@ async function handleRequest(request) {
   }
 
   try {
-    // ค้นหาทั้งคำไทยและสากลควบคู่กันเพื่อผลลัพธ์ที่ครอบคลุม
-    const queries = [`${q} คาราโอเกะ`, `${q} karaoke`];
+    // 1. ขยายคำค้นหาแบบอัจฉริยะ (Smart Query Expansion)
+    const queries = buildSmartQueries(rawQ);
 
     const settledResponses = await Promise.allSettled(
       queries.map((query) => searchYouTube(query))
@@ -76,7 +76,6 @@ async function handleRequest(request) {
     ];
 
     // ช่องและคีย์เวิร์ดที่บล็อกการเล่นภายนอก (Embedding Disabled / Error 150)
-    // โดยเฉพาะ Sing King ที่ติดลิขสิทธิ์ค่ายเพลงสากลห้ามเล่นนอก YouTube 100%
     const BLOCKED_EMBED_KEYWORDS = ["SING KING", "SINGKING"];
 
     const GMM_RS_CHANNELS = [
@@ -119,7 +118,7 @@ async function handleRequest(request) {
       const channel = entry.channel || "";
       const channelUpper = channel.toUpperCase();
 
-      // ✨ 1. ตัดคลิปจากช่อง Sing King ออกทั้งหมด 100% เพื่อไม่ให้ติดจอแจ้งเตือนลิขสิทธิ์บนทีวี
+      // ตัดคลิปที่บล็อก Embed
       const isBlockedEmbed = BLOCKED_EMBED_KEYWORDS.some(
         (kw) => channelUpper.includes(kw) || titleUpper.includes(kw)
       );
@@ -127,7 +126,7 @@ async function handleRequest(request) {
         continue;
       }
 
-      // 2. กรอง MV ออก ยกเว้นคลิปนั้นจะระบุชัดว่าเป็น Karaoke
+      // กรอง MV ออก ยกเว้นคลิปนั้นจะระบุชัดว่าเป็น Karaoke
       const isKaraoke =
         titleUpper.includes("KARAOKE") || title.includes("คาราโอเกะ");
       const isPureMV =
@@ -138,29 +137,44 @@ async function handleRequest(request) {
 
       let score = 0;
 
-      // 3. คะแนนความตรงของชื่อเพลง (คำนวณตามสูตร)
-      score += calculateTitleRelevance(title, q);
+      // 3. คำนวณคะแนนความตรงของชื่อเพลง
+      score += calculateTitleRelevance(title, rawQ);
 
-      // 4. คะแนนอันดับความนิยมดั้งเดิมจาก YouTube
+      // 4. โบนัสพิเศษกรณีค้นหาคำสั้นอย่าง "เรา" ให้เน้นเพลงคลาสสิก Big Ass / Bodyslam / Loso
+      if (rawQ === "เรา") {
+        if (
+          titleUpper.includes("BIG ASS") ||
+          titleUpper.includes("BODYSLAM") ||
+          titleUpper.includes("LOSO") ||
+          titleUpper.includes("บิ๊กแอส") ||
+          titleUpper.includes("บอดี้สแลม") ||
+          titleUpper.includes("โลโซ") ||
+          titleUpper.includes("เราและนาย")
+        ) {
+          score += 45; // บูสต์คะแนนขึ้นอันดับ 1 ทันที
+        }
+      }
+
+      // 5. คะแนนอันดับความนิยมดั้งเดิมจาก YouTube
       score += Math.max(0, 25 - entry.originalIndex);
 
-      // 5. คะแนนช่อง Official GMM & RS
+      // 6. คะแนนช่อง Official GMM, Genie, RS
       if (GMM_RS_CHANNELS.some((ch) => channelUpper.includes(ch))) {
-        score += 15;
+        score += 20;
       } else if (
         ["GMM", "GRAMMY", "GENIE", "RS", "อาร์สยาม"].some((kw) =>
           titleUpper.includes(kw)
         )
       ) {
+        score += 12;
+      }
+
+      // 7. คะแนนมาสเตอร์ดนตรีแท้ / คาราโอเกะ
+      if (MASTER_KEYWORDS.some((pref) => titleUpper.includes(pref))) {
         score += 10;
       }
 
-      // 6. คะแนนมาสเตอร์ดนตรีแท้ / คาราโอเกะ
-      if (MASTER_KEYWORDS.some((pref) => titleUpper.includes(pref))) {
-        score += 8;
-      }
-
-      // 7. คะแนนภาพชัด
+      // 8. คะแนนภาพชัด
       if (
         ["1080P", "1080", "FHD", "4K", "HD"].some((hd) =>
           titleUpper.includes(hd)
@@ -169,7 +183,7 @@ async function handleRequest(request) {
         score += 4;
       }
 
-      // 8. หักคะแนนไฟล์สังเคราะห์ MIDI
+      // 9. หักคะแนนไฟล์สังเคราะห์ MIDI
       if (MIDI_KEYWORDS.some((midi) => titleUpper.includes(midi))) {
         score -= 15;
       }
@@ -195,7 +209,7 @@ async function handleRequest(request) {
 
     return json({
       success: true,
-      query: q,
+      query: rawQ,
       count: cleanResults.length,
       results: cleanResults,
       items: cleanResults,
@@ -214,6 +228,24 @@ async function handleRequest(request) {
       200
     );
   }
+}
+
+/* * ===================================================== * Smart Query Builder * ===================================================== */
+function buildSmartQueries(q) {
+  const queryLower = q.trim().toLowerCase();
+
+  // กรณีคำสั้นหรือกรณีพิเศษยอดฮิต
+  if (queryLower === "เรา") {
+    return [
+      "เรา Big Ass Bodyslam คาราโอเกะ",
+      "เราและนาย คาราโอเกะ",
+      "เรา คาราโอเกะ",
+      "เรา karaoke",
+    ];
+  }
+
+  // กรณีคำค้นทั่วไป
+  return [`${q} คาราโอเกะ`, `${q} karaoke`];
 }
 
 /* * ===================================================== * Title Relevance Algorithm * ===================================================== */
@@ -267,7 +299,7 @@ function escapeRegExp(string) {
 
 /* * ===================================================== * YouTube Search (Innertube + Fallback สองชั้น) * ===================================================== */
 async function searchYouTube(query) {
-  // 1. ลองผ่าน Innertube API ก่อน
+  // 1. ผ่าน Innertube API
   try {
     const YT_KEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
     const res = await fetch(
